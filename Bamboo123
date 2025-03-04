@@ -1,0 +1,117 @@
+import { test, expect } from '@playwright/test';
+
+const BASE_URL = 'https://your-api-url.com/api/v1/config/system';
+
+test.describe('API Tests for Config System', () => {
+
+  // GET: Retrieve all system configurations
+  test('Retrieve all system configurations', async ({ request }) => {
+    await test.step('Send GET request to fetch all configurations', async () => {
+      const response = await request.get(BASE_URL);
+      expect(response.status()).toBe(200);
+
+      const body = await response.json();
+      await test.step('Verify response is an array', async () => {
+        expect(Array.isArray(body)).toBeTruthy();
+      });
+    });
+  });
+
+  // GET: Retrieve configurations for a specific namespace (NGV)
+  test('Retrieve configurations for namespace NGV', async ({ request }) => {
+    await test.step('Send GET request with namespace NGV', async () => {
+      const response = await request.get(`${BASE_URL}?namespace=NGV`);
+      expect(response.status()).toBe(200);
+
+      const body = await response.json();
+      await test.step('Verify response contains configurations', async () => {
+        expect(Array.isArray(body)).toBeTruthy();
+      });
+    });
+  });
+
+  // GET: Invalid namespace should return 400
+  test('Invalid namespace should return 400', async ({ request }) => {
+    await test.step('Send GET request with an invalid namespace', async () => {
+      const response = await request.get(`${BASE_URL}?namespace=INVALID_NAMESPACE`);
+      expect(response.status()).toBe(400);
+    });
+  });
+
+  // POST: Save a valid configuration
+  test('Save a valid system configuration', async ({ request }) => {
+    await test.step('Send POST request with valid configuration data', async () => {
+      const response = await request.post(BASE_URL, {
+        data: {
+          key: "sample_config",
+          value: "test_value",
+          type: "STRING"
+        }
+      });
+      expect(response.status()).toBe(201);
+    });
+  });
+
+  // POST: Save configuration with missing key should return 400
+  test('Save configuration with missing key should return 400', async ({ request }) => {
+    await test.step('Send POST request without key field', async () => {
+      const response = await request.post(BASE_URL, {
+        data: {
+          value: "test_value",
+          type: "STRING"
+        }
+      });
+      expect(response.status()).toBe(400);
+    });
+  });
+
+  // POST: Save configuration with invalid type
+  test('Save configuration with invalid type should return 400', async ({ request }) => {
+    await test.step('Send POST request with invalid type INTEGER', async () => {
+      const response = await request.post(BASE_URL, {
+        data: {
+          key: "invalid_config",
+          value: "123",
+          type: "INTEGER"
+        }
+      });
+      expect(response.status()).toBe(400);
+    });
+  });
+
+  // POST: Save duplicate configuration key (if not allowed)
+  test('Save duplicate configuration key should return 409', async ({ request }) => {
+    await test.step('Create a configuration with a specific key', async () => {
+      await request.post(BASE_URL, {
+        data: {
+          key: "duplicate_config",
+          value: "value1",
+          type: "STRING"
+        }
+      });
+    });
+
+    await test.step('Attempt to create the same key again', async () => {
+      const response = await request.post(BASE_URL, {
+        data: {
+          key: "duplicate_config",
+          value: "value2",
+          type: "STRING"
+        }
+      });
+      expect(response.status()).toBe(409);
+    });
+  });
+
+  // POST: Invalid JSON format
+  test('Invalid JSON format should return 400', async ({ request }) => {
+    await test.step('Send POST request with malformed JSON', async () => {
+      const response = await request.post(BASE_URL, {
+        headers: { 'Content-Type': 'application/json' },
+        body: '{"key": "broken_config", "value": "test_value", "type": STRING}' // Missing quotes around STRING
+      });
+      expect(response.status()).toBe(400);
+    });
+  });
+
+});
