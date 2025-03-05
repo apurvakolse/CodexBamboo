@@ -1,0 +1,8 @@
+Verify that the API retrieves all the system configurations correctly by checking that the response status is 200.
+Verify that the API retrieves configurations for the "NGV" namespace correctly by checking that the response contains configurations and the status is 200.
+Verify that the API returns a 400 Bad Request status when an invalid namespace is provided in the request.
+Verify that the API saves a valid system configuration correctly by checking that the response status is 201 Created.
+Verify that the API returns a 400 Bad Request status when a POST request is made with a missing "key" field in the request body.
+Verify that the API returns a 400 Bad Request status when a POST request contains an invalid type (e.g., "INTEGER" instead of "STRING").
+Verify that the API returns a 409 Conflict status when attempting to save a duplicate configuration key.
+Verify that the API returns a 400 Bad Request status when a POST request contains invalid JSON formatting.
