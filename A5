@@ -1,0 +1,86 @@
+import { test, expect, request, APIRequestContext } from '@playwright/test';
+import * as fs from 'fs';
+
+const BASE_URL = 'https://api.example.com/system-config'; // Replace with your API endpoint
+const REQUESTS_PATH = './request-response/requests.json';
+const RESPONSES_PATH = './request-response/responses.json';
+
+// Load request and response data from JSON files
+const requests = JSON.parse(fs.readFileSync(REQUESTS_PATH, 'utf-8'));
+const responses = JSON.parse(fs.readFileSync(RESPONSES_PATH, 'utf-8'));
+
+test('Verify that the API retrieves all system configurations correctly', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.get(`${BASE_URL}/configurations`);
+  expect(response.status()).toBe(responses.getAllConfigurations.status);
+  const body = await response.json();
+  expect(body).toStrictEqual(responses.getAllConfigurations.body);
+  await context.dispose();
+});
+
+test('Verify retrieval of configurations for "NGV" namespace', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.get(`${BASE_URL}/configurations?namespace=${requests.getConfigurations.namespace}`);
+  expect(response.status()).toBe(responses.getConfigurations.status);
+  const body = await response.json();
+  expect(body).toStrictEqual(responses.getConfigurations.body);
+  await context.dispose();
+});
+
+test('Verify API returns 400 for invalid namespace', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.get(`${BASE_URL}/configurations?namespace=${requests.getInvalidNamespace.namespace}`);
+  expect(response.status()).toBe(responses.getInvalidNamespace.status);
+  await context.dispose();
+});
+
+test('Verify saving a valid system configuration', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.post(`${BASE_URL}/configurations`, {
+    data: requests.saveValidConfiguration
+  });
+  expect(response.status()).toBe(responses.saveValidConfiguration.status);
+  await context.dispose();
+});
+
+test('Verify 400 Bad Request when POST request is missing "key" field', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.post(`${BASE_URL}/configurations`, {
+    data: requests.missingKey
+  });
+  expect(response.status()).toBe(responses.missingKey.status);
+  await context.dispose();
+});
+
+test('Verify 400 Bad Request when POST request contains an invalid type', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.post(`${BASE_URL}/configurations`, {
+    data: requests.invalidType
+  });
+  expect(response.status()).toBe(responses.invalidType.status);
+  await context.dispose();
+});
+
+test('Verify 409 Conflict when attempting to save a duplicate configuration key', async ({ request }) => {
+  const context = await request.newContext();
+  const validResponse = await context.post(`${BASE_URL}/configurations`, {
+    data: requests.duplicateKey
+  });
+  expect(validResponse.status()).toBe(responses.duplicateKey.status);
+
+  const duplicateResponse = await context.post(`${BASE_URL}/configurations`, {
+    data: requests.duplicateKey
+  });
+  expect(duplicateResponse.status()).toBe(responses.duplicateKey.statusConflict);
+  await context.dispose();
+});
+
+test('Verify 400 Bad Request when POST request contains invalid JSON', async ({ request }) => {
+  const context = await request.newContext();
+  const response = await context.post(`${BASE_URL}/configurations`, {
+    headers: { 'Content-Type': 'application/json' },
+    body: requests.invalidJson
+  });
+  expect(response.status()).toBe(responses.invalidJson.status);
+  await context.dispose();
+});
