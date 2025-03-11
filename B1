@@ -1,0 +1,28 @@
+try {
+    const response = await restApiUtil.getResponseFromApiRequest('post', BASE_URL, apiParameters);
+    
+    console.log("Response status:", response.status());
+
+    // Expect a 500 Internal Server Error
+    expect(response.status()).toBe(500);
+
+    // Get the content type
+    const contentType = response.headers()['content-type'] || '';
+
+    // Handle non-JSON responses
+    if (contentType.includes('application/json')) {
+        try {
+            const jsonData = await response.json();
+            console.log("Parsed JSON response:", jsonData);
+        } catch (error) {
+            console.error("JSON parsing failed. Response might be malformed.");
+            console.log("Raw response text:", await response.text());
+        }
+    } else {
+        console.log("Non-JSON response detected. Logging raw response...");
+        const rawText = await response.text();
+        console.log("Raw response text:", rawText);
+    }
+} catch (error) {
+    console.error("Error in API request:", error);
+}
