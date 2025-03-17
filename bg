@@ -1,0 +1,16 @@
+import { test, expect } from '@playwright/test';
+
+test('check if element is highlighted', async ({ page }) => {
+    await page.goto('https://example.com');
+
+    const element = await page.locator('#elementId');
+
+    // Get computed background color
+    const isHighlighted = await element.evaluate(el => {
+        const style = window.getComputedStyle(el);
+        return style.backgroundColor === 'rgb(255, 0, 0)'; // Example: Red highlight
+    });
+
+    console.log('Is highlighted:', isHighlighted);
+    expect(isHighlighted).toBe(true); // Adjust as needed
+});
