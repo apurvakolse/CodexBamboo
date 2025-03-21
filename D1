@@ -14,17 +14,14 @@ class ScrollUtils {
      * @returns New scrollTop position after scrolling.
      */
     async scrollUsingMouseWheel(selector: string, deltaY: number): Promise<number> {
-        // Hover to ensure focus before scrolling
         await this.page.locator(selector).hover();
-        
-        // Perform scroll
         await this.page.mouse.wheel(0, deltaY);
         await this.page.waitForTimeout(500); // Allow time for scrolling
 
         // Get new scroll position with strict null and NaN checks
-        const newScroll = await this.page.evaluate((sel) => {
+        const newScroll = await this.page.evaluate(async (sel) => {
             const targetElement = document.querySelector(sel) as HTMLElement | null;
-            if (!targetElement || isNaN(targetElement.scrollTop)) {
+            if (targetElement === null || isNaN(targetElement.scrollTop)) {
                 console.warn(`Invalid scroll target or NaN scrollTop for: ${sel}`);
                 return 0; // Default to zero if invalid
             }
@@ -53,9 +50,9 @@ class ScrollUtils {
         const { x, y } = box;
 
         // Get initial scroll position with strict checks
-        const initialScroll = await this.page.evaluate((sel) => {
+        const initialScroll = await this.page.evaluate(async (sel) => {
             const scrollElement = document.querySelector(sel) as HTMLElement | null;
-            return scrollElement && !isNaN(scrollElement.scrollTop) ? scrollElement.scrollTop : 0;
+            return scrollElement !== null && !isNaN(scrollElement.scrollTop) ? scrollElement.scrollTop : 0;
         }, selector);
 
         // Perform scroll bar drag
@@ -66,9 +63,9 @@ class ScrollUtils {
         await this.page.waitForTimeout(500); // Allow time for scrolling
 
         // Get new scroll position with strict checks
-        const newScroll = await this.page.evaluate((sel) => {
+        const newScroll = await this.page.evaluate(async (sel) => {
             const scrollElement = document.querySelector(sel) as HTMLElement | null;
-            return scrollElement && !isNaN(scrollElement.scrollTop) ? scrollElement.scrollTop : 0;
+            return scrollElement !== null && !isNaN(scrollElement.scrollTop) ? scrollElement.scrollTop : 0;
         }, selector);
 
         return newScroll;
