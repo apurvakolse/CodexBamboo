@@ -1,0 +1,59 @@
+async scrollUsingMouseWheel(selector: string, deltaY: number): Promise<number> {
+    // Perform scroll
+    await this.page.mouse.wheel(0, deltaY);
+    await this.page.waitForTimeout(500); // Wait for scroll effect
+
+    // Get new scroll position with explicit null check
+    const newScroll = await this.page.evaluate((sel) => {
+        const element = document.querySelector(sel);
+        if (!element) {
+            console.warn(`Element not found: ${sel}`);
+            return 0; // Return default value
+        }
+        return (element as HTMLElement).scrollTop || 0;
+    }, selector);
+
+    return newScroll; // Return new position for verification
+}
+
+
+
+
+
+
+
+
+
+
+
+async scrollUsingScrollbar(selector: string, startX: number, startY: number, endY: number): Promise<number> {
+    const element = await this.page.locator(selector);
+    const box = await element.boundingBox();
+
+    if (!box) {
+        throw new Error(`Could not find element with selector: ${selector}`);
+    }
+
+    const { x, y } = box;
+
+    // Get initial scroll position with null safety
+    const initialScroll = await this.page.evaluate((sel) => {
+        const element = document.querySelector(sel);
+        return element ? (element as HTMLElement).scrollTop || 0 : 0;
+    }, selector);
+
+    // Perform scroll bar drag
+    await this.page.mouse.move(x + startX, y + startY);
+    await this.page.mouse.down();
+    await this.page.mouse.move(x + startX, y + endY);
+    await this.page.mouse.up();
+    await this.page.waitForTimeout(500); // Wait for scroll effect
+
+    // Get new scroll position with null safety
+    const newScroll = await this.page.evaluate((sel) => {
+        const element = document.querySelector(sel);
+        return element ? (element as HTMLElement).scrollTop || 0 : 0;
+    }, selector);
+
+    return newScroll;
+}
