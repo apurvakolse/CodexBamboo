@@ -1,59 +1,78 @@
-async scrollUsingMouseWheel(selector: string, deltaY: number): Promise<number> {
-    // Perform scroll
-    await this.page.mouse.wheel(0, deltaY);
-    await this.page.waitForTimeout(500); // Wait for scroll effect
+import { Page } from '@playwright/test';
 
-    // Get new scroll position with explicit null check
-    const newScroll = await this.page.evaluate((sel) => {
-        const element = document.querySelector(sel);
-        if (!element) {
-            console.warn(`Element not found: ${sel}`);
-            return 0; // Return default value
-        }
-        return (element as HTMLElement).scrollTop || 0;
-    }, selector);
+class ScrollUtils {
+    private page: Page;
 
-    return newScroll; // Return new position for verification
-}
-
-
-
-
-
-
-
-
-
-
-
-async scrollUsingScrollbar(selector: string, startX: number, startY: number, endY: number): Promise<number> {
-    const element = await this.page.locator(selector);
-    const box = await element.boundingBox();
-
-    if (!box) {
-        throw new Error(`Could not find element with selector: ${selector}`);
+    constructor(page: Page) {
+        this.page = page;
     }
 
-    const { x, y } = box;
+    /**
+     * Scrolls a given element using the mouse wheel and returns the new scroll position.
+     * @param selector - CSS selector of the scrollable element.
+     * @param deltaY - Amount to scroll (positive for down, negative for up).
+     * @returns New scrollTop position after scrolling.
+     */
+    async scrollUsingMouseWheel(selector: string, deltaY: number): Promise<number> {
+        // Hover to ensure focus before scrolling
+        await this.page.locator(selector).hover();
+        
+        // Perform scroll
+        await this.page.mouse.wheel(0, deltaY);
+        await this.page.waitForTimeout(500); // Allow time for scrolling
 
-    // Get initial scroll position with null safety
-    const initialScroll = await this.page.evaluate((sel) => {
-        const element = document.querySelector(sel);
-        return element ? (element as HTMLElement).scrollTop || 0 : 0;
-    }, selector);
+        // Get new scroll position with strict null and NaN checks
+        const newScroll = await this.page.evaluate((sel) => {
+            const targetElement = document.querySelector(sel) as HTMLElement | null;
+            if (!targetElement || isNaN(targetElement.scrollTop)) {
+                console.warn(`Invalid scroll target or NaN scrollTop for: ${sel}`);
+                return 0; // Default to zero if invalid
+            }
+            return targetElement.scrollTop;
+        }, selector);
 
-    // Perform scroll bar drag
-    await this.page.mouse.move(x + startX, y + startY);
-    await this.page.mouse.down();
-    await this.page.mouse.move(x + startX, y + endY);
-    await this.page.mouse.up();
-    await this.page.waitForTimeout(500); // Wait for scroll effect
+        return newScroll;
+    }
 
-    // Get new scroll position with null safety
-    const newScroll = await this.page.evaluate((sel) => {
-        const element = document.querySelector(sel);
-        return element ? (element as HTMLElement).scrollTop || 0 : 0;
-    }, selector);
+    /**
+     * Scrolls a given element using the scroll bar by dragging and returns the new scroll position.
+     * @param selector - CSS selector of the scrollable element.
+     * @param startX - X coordinate to start the drag.
+     * @param startY - Y coordinate to start the drag.
+     * @param endY - Y coordinate to drag the scroll bar to.
+     * @returns New scrollTop position after scrolling.
+     */
+    async scrollUsingScrollbar(selector: string, startX: number, startY: number, endY: number): Promise<number> {
+        const element = await this.page.locator(selector);
+        const box = await element.boundingBox();
 
-    return newScroll;
+        if (!box) {
+            throw new Error(`Could not find element with selector: ${selector}`);
+        }
+
+        const { x, y } = box;
+
+        // Get initial scroll position with strict checks
+        const initialScroll = await this.page.evaluate((sel) => {
+            const scrollElement = document.querySelector(sel) as HTMLElement | null;
+            return scrollElement && !isNaN(scrollElement.scrollTop) ? scrollElement.scrollTop : 0;
+        }, selector);
+
+        // Perform scroll bar drag
+        await this.page.mouse.move(x + startX, y + startY);
+        await this.page.mouse.down();
+        await this.page.mouse.move(x + startX, y + endY);
+        await this.page.mouse.up();
+        await this.page.waitForTimeout(500); // Allow time for scrolling
+
+        // Get new scroll position with strict checks
+        const newScroll = await this.page.evaluate((sel) => {
+            const scrollElement = document.querySelector(sel) as HTMLElement | null;
+            return scrollElement && !isNaN(scrollElement.scrollTop) ? scrollElement.scrollTop : 0;
+        }, selector);
+
+        return newScroll;
+    }
 }
+
+export default ScrollUtils;
