@@ -1,0 +1,67 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('DICOM Header Window Scrolling', () => {
+    
+    test('Verify user can scroll up and down in DICOM header window seamlessly', async ({ page }) => {
+
+        // Step 1: Launch the study on the viewport
+        await test.step('Given a study image is launched on the viewport', async () => {
+            await page.goto('URL_OF_THE_APPLICATION'); // Update with actual application URL
+            await page.waitForSelector('VIEWPORT_SELECTOR'); // Replace with actual viewport selector
+        });
+
+        // Step 2: Select an image and open the DICOM header window
+        await test.step('When user selects an image and clicks on DICOM header window icon', async () => {
+            await page.click('VIEWPORT_IMAGE_SELECTOR'); // Update with actual image selector
+            await page.waitForSelector('DICOM_HEADER_ICON'); // Ensure the icon is present
+            await page.click('DICOM_HEADER_ICON'); // Click on the icon to open the header
+        });
+
+        // Step 3: Verify that the DICOM header window is displayed
+        await test.step('Then the DICOM header window should be displayed', async () => {
+            const isHeaderVisible = await page.isVisible('DICOM_HEADER_WINDOW_SELECTOR'); // Update selector
+            expect(isHeaderVisible).toBeTruthy();
+        });
+
+        // Step 4: Click and drag the scroll bar to scroll down
+        await test.step('And: Click and drag the scroll bar to scroll down', async () => {
+            const scrollBar = await page.locator('DICOM_HEADER_SCROLLBAR_SELECTOR'); // Update selector
+            await scrollBar.click();
+            await page.mouse.wheel(0, 500); // Scroll down
+            await page.waitForTimeout(1000); // Wait for scrolling effect
+        });
+
+        // Step 5: Verify that the scroll bar has moved down
+        await test.step('And: The scroll bar moves down and the page updates accordingly', async () => {
+            const scrollPosition = await page.evaluate(() => {
+                return document.querySelector('DICOM_HEADER_SCROLLBAR_SELECTOR')?.scrollTop; // Update selector
+            });
+            expect(scrollPosition).toBeGreaterThan(0);
+        });
+
+        // Step 6: Move the mouse wheel up and down in the DICOM header window
+        await test.step('And: User scrolls using mouse wheel up and down inside the DICOM header window', async () => {
+            const dicomWindow = await page.locator('DICOM_HEADER_WINDOW_SELECTOR'); // Update selector
+            await dicomWindow.hover();
+            await page.mouse.wheel(0, -200); // Scroll up
+            await page.waitForTimeout(500);
+            await page.mouse.wheel(0, 200); // Scroll down
+        });
+
+        // Step 7: Verify that the text inside the DICOM header moves accordingly
+        await test.step('Then: Text inside the DICOM header window moves up and down', async () => {
+            const initialTextPosition = await page.evaluate(() => {
+                return document.querySelector('DICOM_TEXT_SELECTOR')?.getBoundingClientRect().top; // Update selector
+            });
+
+            await page.mouse.wheel(0, 200); // Scroll down
+            await page.waitForTimeout(500);
+
+            const newTextPosition = await page.evaluate(() => {
+                return document.querySelector('DICOM_TEXT_SELECTOR')?.getBoundingClientRect().top; // Update selector
+            });
+
+            expect(newTextPosition).not.toBe(initialTextPosition);
+        });
+    });
+});
