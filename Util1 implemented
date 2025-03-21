@@ -1,0 +1,26 @@
+import { test, expect } from '@playwright/test';
+import ScrollUtils from './scrollUtils'; // Import the scrolling utility
+
+test.describe('DICOM Header Window Scrolling Verification', () => {
+    
+    test('Verify user can scroll using mouse wheel and scrollbar', async ({ page }) => {
+        const scrollUtils = new ScrollUtils(page);
+
+        // Open the DICOM header
+        await page.goto('URL_OF_THE_APPLICATION'); // Replace with actual URL
+        await page.click('DICOM_HEADER_ICON'); // Open DICOM Header
+
+        // Ensure DICOM Header is displayed
+        await expect(page.locator('DICOM_HEADER_WINDOW_SELECTOR')).toBeVisible();
+
+        // Scroll Using Mouse Wheel
+        const initialScrollMouse = await page.evaluate(() => document.querySelector('DICOM_HEADER_WINDOW_SELECTOR')?.scrollTop || 0);
+        const finalScrollMouse = await scrollUtils.scrollUsingMouseWheel('DICOM_HEADER_WINDOW_SELECTOR', 300);
+        expect(finalScrollMouse).toBeGreaterThan(initialScrollMouse);
+
+        // Scroll Using Scroll Bar Drag
+        const initialScrollBar = await page.evaluate(() => document.querySelector('DICOM_HEADER_SCROLLBAR_SELECTOR')?.scrollTop || 0);
+        const finalScrollBar = await scrollUtils.scrollUsingScrollbar('DICOM_HEADER_SCROLLBAR_SELECTOR', 5, 10, 200);
+        expect(finalScrollBar).toBeGreaterThan(initialScrollBar);
+    });
+});
