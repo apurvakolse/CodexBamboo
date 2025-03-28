@@ -1,1 +1,25 @@
+import { test, expect } from '@playwright/test';
 
+test('resize using bottom-right corner', async ({ page }) => {
+  await page.goto('your-url-here');
+
+  // Locate the resizable container (use a stable selector for this)
+  const resizableElement = page.locator('css=your-resizable-element-selector');
+  await resizableElement.waitFor();
+
+  const box = await resizableElement.boundingBox();
+  if (!box) throw new Error('Resizable element not found');
+
+  // Calculate the bottom-right corner of the element
+  const startX = box.x + box.width;
+  const startY = box.y + box.height;
+
+  const resizeByX = 100; // how much you want to resize horizontally
+  const resizeByY = 50;  // how much you want to resize vertically
+
+  // Simulate drag from bottom-right corner
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + resizeByX, startY + resizeByY, { steps: 10 });
+  await page.mouse.up();
+});
