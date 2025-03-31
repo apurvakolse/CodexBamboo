@@ -1,0 +1,21 @@
+await test.step('Then verify all rows of DICOM header data are displayed', async () => {
+  let dicomHeader = await gvstep.gv.gvCommon.locator(DICOM_HEADER_OPTION.dicom_header).first().textContent();
+  
+  // Assuming dicomInfo is an array of objects with 'TAG Description' and 'Value' properties
+  const dicomExpectedValues = dicomInfo.map(item => item['Value']);
+  
+  // Make sure all expected values are defined
+  dicomExpectedValues.forEach(value => {
+    expect(value).toBeDefined();
+  });
+
+  if (dicomHeader) {
+    const dicomHeaderLabels = dicomHeader.split('.');
+    
+    // Compare each item
+    dicomExpectedValues.forEach((expectedValue, index) => {
+      let actualValue = dicomHeaderLabels[index]?.trim().replace(/-/g, '').trimStart();
+      expect(actualValue).toEqual(expectedValue);
+    });
+  }
+});
