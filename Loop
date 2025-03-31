@@ -1,21 +1,29 @@
+
+
+
 await test.step('Then verify all rows of DICOM header data are displayed', async () => {
-  let dicomHeader = await gvstep.gv.gvCommon.locator(DICOM_HEADER_OPTION.dicom_header).first().textContent();
+  const dicomHeader = await gvstep.gv.gvCommon.locator(DICOM_HEADER_OPTION.dicom_header).first().textContent();
+
+  // Filter only items that have both TAG Description and Value
+  const validDicomItems = dicomInfo.filter(item => item['TAG Description'] && item['Value']);
   
-  // Assuming dicomInfo is an array of objects with 'TAG Description' and 'Value' properties
-  const dicomExpectedValues = dicomInfo.map(item => item['Value']);
-  
+  // Extract expected values in the order they appear
+  const expectedValues = validDicomItems.map(item => item['Value']);
+
   // Make sure all expected values are defined
-  dicomExpectedValues.forEach(value => {
+  expectedValues.forEach(value => {
     expect(value).toBeDefined();
   });
 
   if (dicomHeader) {
-    const dicomHeaderLabels = dicomHeader.split('.');
-    
-    // Compare each item
-    dicomExpectedValues.forEach((expectedValue, index) => {
-      let actualValue = dicomHeaderLabels[index]?.trim().replace(/-/g, '').trimStart();
-      expect(actualValue).toEqual(expectedValue);
+    const headerValues = dicomHeader.split('.').map(item =>
+      item.replace(/-/g, '').trimStart().trim()
+    );
+
+    // Validate each value from header matches the corresponding expected value
+    expectedValues.forEach((expected, index) => {
+      const actual = headerValues[index];
+      expect(actual).toEqual(expected);
     });
   }
 });
