@@ -1,0 +1,18 @@
+async getTagDescriptionValue(
+  dicomInfo: { [key: string]: string }[],
+  tagLabel: string
+): Promise<string> {
+  const match = dicomInfo.find(item => item['TAG Description'] === tagLabel);
+
+  if (match === undefined) {
+    throw new Error(`Tag "${tagLabel}" not found in DICOM info.`);
+  }
+
+  const value = match['Value'];
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Tag "${tagLabel}" has an empty or invalid value.`);
+  }
+
+  return value;
+}
