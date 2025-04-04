@@ -1,0 +1,48 @@
+async isElementInView(selector: string): Promise<boolean> {
+  const boundingBox = await this.getBoundingBox(selector);
+  if (!this.isValidBoundingBox(boundingBox)) return false;
+
+  const { top, left, bottom, right, windowHeight, windowWidth } = boundingBox;
+
+  return (
+    top >= 0 &&
+    left >= 0 &&
+    bottom <= (windowHeight ?? 0) &&
+    right <= (windowWidth ?? 0)
+  );
+}
+
+private async getBoundingBox(selector: string): Promise<{
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
+  windowHeight: number;
+  windowWidth: number;
+} | null> {
+  const locator = this.locator(selector).last();
+  return await locator.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return {
+      top: rect.top,
+      left: rect.left,
+      bottom: rect.bottom,
+      right: rect.right,
+      windowHeight: window.innerHeight || document.documentElement.clientHeight,
+      windowWidth: window.innerWidth || document.documentElement.clientWidth,
+    };
+  });
+}
+
+private isValidBoundingBox(boundingBox: any): boolean {
+  if (!boundingBox) return false;
+
+  const { top, left, bottom, right } = boundingBox;
+
+  return (
+    typeof top === 'number' && !Number.isNaN(top) &&
+    typeof left === 'number' && !Number.isNaN(left) &&
+    typeof bottom === 'number' && !Number.isNaN(bottom) &&
+    typeof right === 'number' && !Number.isNaN(right)
+  );
+}
