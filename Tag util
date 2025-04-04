@@ -1,0 +1,35 @@
+export async function validateDicom(
+  dicomInfo: { [key: string]: string }[],
+  dicomHeader: string
+): Promise<boolean> {
+  if (!dicomHeader) return false;
+
+  const dicomHeaderArray = dicomHeader.split('.');
+  if (dicomHeaderArray.length < 3) return false;
+
+  const getTagValue = (tagLabel: string): string => {
+    const match = dicomInfo.find(item => item['TAG Description'] === tagLabel);
+    if (!match) throw new Error(`Tag "${tagLabel}" not found in DICOM info.`);
+    
+    const value = match['Value'];
+    if (typeof value !== 'string' || value.trim() === '') {
+      throw new Error(`Tag "${tagLabel}" has an empty or invalid value.`);
+    }
+    return value;
+  };
+
+  try {
+    const dicomModalityInfo = getTagValue('Modality');
+    const dicomTagDescriptionInfo = getTagValue('Study Description');
+    const dicomTagDateInfo = getTagValue('Study Date');
+
+    return (
+      dicomHeaderArray[0].trim() === dicomModalityInfo &&
+      dicomHeaderArray[1].trim() === dicomTagDescriptionInfo &&
+      dicomHeaderArray[2].replace(/-/g, '').trimStart() === dicomTagDateInfo
+    );
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
