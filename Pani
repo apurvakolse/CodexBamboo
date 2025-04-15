@@ -1,0 +1,44 @@
+import AdmZip from 'adm-zip';
+import fs from 'fs-extra';
+import path from 'path';
+
+// Configurable paths
+const zipPath = 'sample.zip';            // Path to your ZIP file
+const extractPath = './extracted';       // Where to extract the ZIP
+const outputFolder = './output';         // Where to copy renamed files
+
+// Step 1: Extract ZIP
+function extractZip(zipPath: string, extractTo: string) {
+  const zip = new AdmZip(zipPath);
+  zip.extractAllTo(extractTo, true);
+  console.log(`ZIP extracted to ${extractTo}`);
+}
+
+// Step 2: Recursively copy and rename files
+async function copyFilesWithPath(dir: string, basePath: string) {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    const relativePath = path.relative(basePath, fullPath);
+    const flattenedName = relativePath.replace(/[\\/]/g, '_');
+
+    if (entry.isDirectory()) {
+      await copyFilesWithPath(fullPath, basePath);
+    } else {
+      const destFile = path.join(outputFolder, flattenedName);
+      await fs.copyFile(fullPath, destFile);
+      console.log(`Copied: ${fullPath} → ${destFile}`);
+    }
+  }
+}
+
+// Step 3: Run everything
+async function run() {
+  fs.ensureDirSync(outputFolder);
+  extractZip(zipPath, extractPath);
+  await copyFilesWithPath(extractPath, extractPath);
+  console.log('All files copied with path-appended filenames.');
+}
+
+run().catch(console.error);
