@@ -1,0 +1,24 @@
+param (
+    [string]$ZipPath = "sample.zip",
+    [string]$ExtractTo = ".\extracted",
+    [string]$OutputTo = ".\output"
+)
+
+# Create necessary folders
+New-Item -ItemType Directory -Force -Path $ExtractTo | Out-Null
+New-Item -ItemType Directory -Force -Path $OutputTo | Out-Null
+
+# Extract ZIP
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory($ZipPath, $ExtractTo)
+
+# Recursively copy and rename files
+Get-ChildItem -Path $ExtractTo -Recurse -File | ForEach-Object {
+    $relativePath = $_.FullName.Substring($ExtractTo.Length + 1)
+    $safeName = $relativePath -replace "[\\/:*?""<>|]", "_" # replace illegal filename chars
+    $dest = Join-Path $OutputTo $safeName
+    Copy-Item -Path $_.FullName -Destination $dest
+    Write-Host "Copied: $($_.FullName) → $dest"
+}
+
+Write-Host "`nAll files copied with path-appended filenames."
