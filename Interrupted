@@ -1,0 +1,704 @@
+Thanks, Apurva! This section clearly outlines user expectations, system responsibilities, design boundaries, and acceptance criteria for the Interrupted Workflow feature. Here's a cleaned-up and well-structured version for design documentation, separating it into understandable subsections.
+
+
+---
+
+1. User Goal
+
+The user shall be able to manage an interrupted workflow scenario, stopping the view of one exam in favor of another. When returning, the previously interrupted exam shall be restored to the exact state the user left it in.
+
+
+---
+
+2. User Needs Statement
+
+> "As a radiologist, I want to manage an interrupted workflow situation so that my previous work and patient context are preserved, and no patient mismatch occurs."
+(SE-ALM Reference)
+
+
+
+
+---
+
+3. Relevant SRS Requirements
+
+When viewing an exam, the system shall allow the user to interrupt the exam to view another urgent exam. (SE-ALM)
+
+After completing the urgent exam, the system shall allow the user to return to the previous exam in its original state. (SE-ALM)
+
+
+
+---
+
+4. Functional Notes
+
+Session Management: Frontend session management (currently via WFM) is sufficient for R1 (same workstation only).
+
+Cross-Monitor Support: Scenarios will be validated in single and multi-monitor environments.
+
+Components to Preserve in Session:
+
+Viewer Layout (with or without Priors)
+
+Hanging Protocol & Fullscreen mode state
+
+Open Panels (e.g., Segmentation, ROI tools)
+
+Viewports (Zoom, Pan, Flip, Rotate, Windowing, Slab Thickness)
+
+GSPS applied
+
+Annotations & Measurements
+
+Navigator state
+
+AI results (if applied)
+
+Toolbar state & opened Microfrontends
+
+Any user preference/settings changes
+
+
+
+
+---
+
+5. Acceptance Criteria
+
+[ ] The user can launch Exam 1, perform actions (e.g., measurements), interrupt it to launch Exam 2, and no save popup should appear.
+
+[ ] The system allows the user to resume Exam 1, retaining all previous states, including annotations and measurements.
+
+[ ] Upon resuming, all viewer settings (layout, zoom, etc.) are restored to how the user left them.
+
+[ ] All sessions are managed within a single browser tab, or appropriate context handling is done.
+
+[ ] Multi-monitor context switch is handled cleanly without data loss or corruption.
+
+[ ] System performance should not degrade with multiple interrupted sessions.
+
+
+
+---
+
+6. Design & Technical Notes
+
+Hybrid Design Approach (refer to F16106 – NGV Save Session State):
+
+Use iFrame navigation for fast switching.
+
+Use SessionState persistence for memory optimization.
+
+
+This feature is a dependency for:
+E14851 – NG WFM: Interrupted Workflow Support
+
+Periodic session saving is required for error recovery.
+
+Performance and stability test scenarios:
+
+Test with up to 5 or infinite tabs.
+
+Monitor out-of-memory behavior and switching latency.
+
+
+
+
+---
+
+7. User Stories
+
+TDR (13) – Interrupted Workflow
+
+US1 (13) – Save & Restore Workflow (Single Monitor)
+
+US2 (13) – Save & Restore Workflow (Multi Monitor)
+
+Spike (13) – Memory Profiling & Analysis
+
+Study memory usage across sample types
+
+Analyze user actions (e.g., scrolling) on memory footprint
+
+Assess cache impact
+
+Evaluate iFrame memory behavior (1, 2, 3+ iFrames)
+
+
+US3 (26) – Performance Optimization for iFrame-based Workflow Management
+
+
+
+---
+
+Would you like a formatted Confluence-ready version, or want help visualizing the user flow diagram or test scenarios next?
+
+‐------------------------------------------------1st END-------------‐-----------
+
+**Test Scenarios for Interrupted Workflow - GWT Format (with Titles)**
+
+---
+
+### 1. Basic Interrupted Workflow Functionality
+
+**Scenario 1: Switch from one exam to another without prompt**  
+**Given** the user is viewing Exam A  
+**When** the user receives an urgent Exam B and opens it  
+**Then** the system should switch to Exam B without prompting to save Exam A  
+
+**Scenario 2: Resume previously interrupted exam**  
+**Given** the user has interrupted Exam A and is now done viewing Exam B  
+**When** the user reopens Exam A  
+**Then** the viewer should restore Exam A exactly as it was left  
+
+**Scenario 3: Preserve all changes on interruption**  
+**Given** the user has made annotations and layout changes in Exam A  
+**When** the user switches to Exam B  
+**And** later returns to Exam A  
+**Then** all annotations and layout changes should be preserved  
+
+**Scenario 4: Maintain image manipulation state**  
+**Given** the user has zoomed, panned, and applied a window level on Exam A  
+**When** the exam is interrupted and resumed later  
+**Then** these image manipulations shall remain intact  
+
+**Scenario 5: Use single browser tab for all sessions**  
+**Given** the user opens multiple exams in the same browser tab  
+**When** switching between exams  
+**Then** session state must be preserved and restored without opening new tabs  
+
+---
+
+### 2. Multi-Monitor Support
+
+**Scenario 6: Restore layout across multiple monitors**  
+**Given** the user is using multiple monitors and has a layout applied to Exam A  
+**When** the user interrupts Exam A and later returns  
+**Then** all monitors should resume the previous layout configuration  
+
+**Scenario 7: Restore viewport state per monitor**  
+**Given** the user made different zoom/pan settings on each monitor  
+**When** the exam is resumed  
+**Then** each monitor shall reflect its last known viewport state  
+
+**Scenario 8: Maintain context switching across monitors**  
+**Given** the user switches context from Monitor 1 to Monitor 2 during interruption  
+**When** exam is resumed  
+**Then** each monitor shall restore the context it had before interruption  
+
+---
+
+### 3. Session State Persistence
+
+**Scenario 9: Save session state periodically**  
+**Given** the user is working on an exam  
+**When** user makes actions like annotations or layout changes  
+**Then** session state should be saved periodically in the background  
+
+**Scenario 10: Recover from browser crash**  
+**Given** the browser crashes during an active exam  
+**When** the user reopens the viewer  
+**Then** the last saved session state should be restored with a maximum data loss of 30 seconds  
+
+---
+
+### 4. User Preferences and UI Settings
+
+**Scenario 11: Retain user preferences on resume**  
+**Given** the user has selected a specific theme and toolbar config  
+**When** they resume the interrupted exam  
+**Then** those preferences should be reapplied  
+
+**Scenario 12: Restore navigator state**  
+**Given** the user has changed the navigator visibility or filter  
+**When** the exam is resumed  
+**Then** the same navigator configuration should be restored  
+
+**Scenario 13: Restore GSPS and measurements**  
+**Given** the user has created measurements or applied GSPS  
+**When** switching between exams  
+**Then** those should remain unchanged upon returning  
+
+---
+
+### 5. Performance Requirements
+
+**Scenario 14: Session restore under 2 seconds**  
+**Given** the user resumes an interrupted exam  
+**When** the session state is restored  
+**Then** it should complete in less than 2 seconds  
+
+**Scenario 15: Maintain image scroll performance**  
+**Given** multiple interrupted sessions are present  
+**When** the user scrolls through images in a viewport  
+**Then** scrolling speed should remain at or above 60 fps  
+
+**Scenario 16: Allow multiple interruptions**  
+**Given** the user has already interrupted 3 exams  
+**When** interrupting a 4th exam  
+**Then** the system should still allow the action and maintain integrity  
+
+---
+
+### 6. Memory and IFrame Management
+
+**Scenario 17: Use IFrame if memory is available**  
+**Given** the browser memory is below threshold  
+**When** a new exam is interrupted  
+**Then** the system should retain IFrame in memory for fast switching  
+
+**Scenario 18: Offload session when memory limit is exceeded**  
+**Given** the memory limit is exceeded  
+**When** switching to another exam  
+**Then** the system shall persist current session state and remove IFrame  
+
+**Scenario 19: Reload session from backend**  
+**Given** an IFrame was offloaded due to memory constraints  
+**When** the exam is resumed  
+**Then** the system shall reload session state from backend  
+
+---
+
+### 7. Negative & Edge Cases
+
+**Scenario 20: Handle browser crash without save**  
+**Given** session save failed and the browser crashes  
+**When** the user tries to reopen exam  
+**Then** the system shall show an appropriate error or fallback state  
+
+**Scenario 21: Too many IFrames opened**  
+**Given** the user has interrupted 10+ exams  
+**When** memory limit is hit  
+**Then** system should offload least recently used session and notify user if necessary  
+
+**Scenario 22: User isolation for session state**  
+**Given** one user starts an exam and interrupts it  
+**When** another user logs in  
+**Then** they shall not be able to see the previous user’s session state  
+
+**Scenario 23: Interrupted session unavailable on another workstation**  
+**Given** the user starts exam on one workstation  
+**When** switching to another workstation  
+**Then** interrupted session shall not be available in R1  
+
+---
+
+### 8. Tool/Panel/Frontend Interactions
+
+**Scenario 24: Reopen previously used tools or panels**  
+**Given** user opens a measurement tool or segmentation panel  
+**When** session is resumed  
+**Then** opened tools and panels should be restored to their previous state  
+
+**Scenario 25: Toolbar and shortcuts retained**  
+**Given** user had selected specific toolbar or shortcuts  
+**When** returning to the interrupted exam  
+**Then** those preferences should remain unchanged  
+
+**Scenario 26: AI results applied are retained**  
+**Given** AI results were loaded in the session  
+**When** resuming the exam  
+**Then** the same AI results should still be applied
+
+
+‐-------------------------------------------------2nd END------------------------------
+
+**Test Scenarios for Interrupted Workflow - GWT Format (with Titles)**
+
+---
+
+### 1. Basic Interrupted Workflow Functionality
+
+**Scenario 1: Switch from one exam to another without prompt**  
+**Given** the user is viewing Exam A  
+**When** the user receives an urgent Exam B and opens it  
+**Then** the system should switch to Exam B without prompting to save Exam A  
+
+**Scenario 2: Resume previously interrupted exam**  
+**Given** the user has interrupted Exam A and is now done viewing Exam B  
+**When** the user reopens Exam A  
+**Then** the viewer should restore Exam A exactly as it was left  
+
+**Scenario 3: Preserve all changes on interruption**  
+**Given** the user has made annotations and layout changes in Exam A  
+**When** the user switches to Exam B  
+**And** later returns to Exam A  
+**Then** all annotations and layout changes should be preserved  
+
+**Scenario 4: Maintain image manipulation state**  
+**Given** the user has zoomed, panned, and applied a window level on Exam A  
+**When** the exam is interrupted and resumed later  
+**Then** these image manipulations shall remain intact  
+
+**Scenario 5: Use single browser tab for all sessions**  
+**Given** the user opens multiple exams in the same browser tab  
+**When** switching between exams  
+**Then** session state must be preserved and restored without opening new tabs  
+
+---
+
+### 2. Multi-Monitor Support
+
+**Scenario 6: Restore layout across multiple monitors**  
+**Given** the user is using multiple monitors and has a layout applied to Exam A  
+**When** the user interrupts Exam A and later returns  
+**Then** all monitors should resume the previous layout configuration  
+
+**Scenario 7: Restore viewport state per monitor**  
+**Given** the user made different zoom/pan settings on each monitor  
+**When** the exam is resumed  
+**Then** each monitor shall reflect its last known viewport state  
+
+**Scenario 8: Maintain context switching across monitors**  
+**Given** the user switches context from Monitor 1 to Monitor 2 during interruption  
+**When** exam is resumed  
+**Then** each monitor shall restore the context it had before interruption  
+
+---
+
+### 3. Session State Persistence
+
+**Scenario 9: Save session state periodically**  
+**Given** the user is working on an exam  
+**When** user makes actions like annotations or layout changes  
+**Then** session state should be saved periodically in the background  
+
+**Scenario 10: Recover from browser crash**  
+**Given** the browser crashes during an active exam  
+**When** the user reopens the viewer  
+**Then** the last saved session state should be restored with a maximum data loss of 30 seconds  
+
+---
+
+### 4. User Preferences and UI Settings
+
+**Scenario 11: Retain user preferences on resume**  
+**Given** the user has selected a specific theme and toolbar config  
+**When** they resume the interrupted exam  
+**Then** those preferences should be reapplied  
+
+**Scenario 12: Restore navigator state**  
+**Given** the user has changed the navigator visibility or filter  
+**When** the exam is resumed  
+**Then** the same navigator configuration should be restored  
+
+**Scenario 13: Restore GSPS and measurements**  
+**Given** the user has created measurements or applied GSPS  
+**When** switching between exams  
+**Then** those should remain unchanged upon returning  
+
+---
+
+### 5. Performance Requirements
+
+**Scenario 14: Session restore under 2 seconds**  
+**Given** the user resumes an interrupted exam  
+**When** the session state is restored  
+**Then** it should complete in less than 2 seconds  
+
+**Scenario 15: Maintain image scroll performance**  
+**Given** multiple interrupted sessions are present  
+**When** the user scrolls through images in a viewport  
+**Then** scrolling speed should remain at or above 60 fps  
+
+**Scenario 16: Allow multiple interruptions**  
+**Given** the user has already interrupted 3 exams  
+**When** interrupting a 4th exam  
+**Then** the system should still allow the action and maintain integrity  
+
+---
+
+### 6. Memory and IFrame Management
+
+**Scenario 17: Use IFrame if memory is available**  
+**Given** the browser memory is below threshold  
+**When** a new exam is interrupted  
+**Then** the system should retain IFrame in memory for fast switching  
+
+**Scenario 18: Offload session when memory limit is exceeded**  
+**Given** the memory limit is exceeded  
+**When** switching to another exam  
+**Then** the system shall persist current session state and remove IFrame  
+
+**Scenario 19: Reload session from backend**  
+**Given** an IFrame was offloaded due to memory constraints  
+**When** the exam is resumed  
+**Then** the system shall reload session state from backend  
+
+---
+
+### 7. Negative & Edge Cases
+
+**Scenario 20: Handle browser crash without save**  
+**Given** session save failed and the browser crashes  
+**When** the user tries to reopen exam  
+**Then** the system shall show an appropriate error or fallback state  
+
+**Scenario 21: Too many IFrames opened**  
+**Given** the user has interrupted 10+ exams  
+**When** memory limit is hit  
+**Then** system should offload least recently used session and notify user if necessary  
+
+**Scenario 22: User isolation for session state**  
+**Given** one user starts an exam and interrupts it  
+**When** another user logs in  
+**Then** they shall not be able to see the previous user’s session state  
+
+**Scenario 23: Interrupted session unavailable on another workstation**  
+**Given** the user starts exam on one workstation  
+**When** switching to another workstation  
+**Then** interrupted session shall not be available in R1  
+
+---
+
+### 8. Tool/Panel/Frontend Interactions
+
+**Scenario 24: Reopen previously used tools or panels**  
+**Given** user opens a measurement tool or segmentation panel  
+**When** session is resumed  
+**Then** opened tools and panels should be restored to their previous state  
+
+**Scenario 25: Toolbar and shortcuts retained**  
+**Given** user had selected specific toolbar or shortcuts  
+**When** returning to the interrupted exam  
+**Then** those preferences should remain unchanged  
+
+**Scenario 26: AI results applied are retained**  
+**Given** AI results were loaded in the session  
+**When** resuming the exam  
+**Then** the same AI results should still be applied
+
+------------------------------------------3rd END--------------------------------
+
+
+Test Scenarios for Interrupted Workflow - GWT Format (with Titles)
+
+
+---
+
+1. Basic Interrupted Workflow Functionality
+
+Scenario 1: Switch from one exam to another without prompt
+Given the user is viewing Exam A
+When the user receives an urgent Exam B and opens it
+Then the system should switch to Exam B without prompting to save Exam A
+
+Scenario 2: Resume previously interrupted exam
+Given the user has interrupted Exam A and is now done viewing Exam B
+When the user reopens Exam A
+Then the viewer should restore Exam A exactly as it was left
+
+Scenario 3: Preserve all changes on interruption
+Given the user has made annotations and layout changes in Exam A
+When the user switches to Exam B
+And later returns to Exam A
+Then all annotations and layout changes should be preserved
+
+Scenario 4: Maintain image manipulation state
+Given the user has zoomed, panned, and applied a window level on Exam A
+When the exam is interrupted and resumed later
+Then these image manipulations shall remain intact
+
+Scenario 5: Use single browser tab for all sessions
+Given the user opens multiple exams in the same browser tab
+When switching between exams
+Then session state must be preserved and restored without opening new tabs
+
+
+---
+
+2. Multi-Monitor Support
+
+Scenario 6: Restore layout across multiple monitors
+Given the user is using multiple monitors and has a layout applied to Exam A
+When the user interrupts Exam A and later returns
+Then all monitors should resume the previous layout configuration
+
+Scenario 7: Restore viewport state per monitor
+Given the user made different zoom/pan settings on each monitor
+When the exam is resumed
+Then each monitor shall reflect its last known viewport state
+
+Scenario 8: Maintain context switching across monitors
+Given the user switches context from Monitor 1 to Monitor 2 during interruption
+When exam is resumed
+Then each monitor shall restore the context it had before interruption
+
+
+---
+
+3. Session State Persistence
+
+Scenario 9: Save session state periodically
+Given the user is working on an exam
+When user makes actions like annotations or layout changes
+Then session state should be saved periodically in the background
+
+Scenario 10: Recover from browser crash
+Given the browser crashes during an active exam
+When the user reopens the viewer
+Then the last saved session state should be restored with a maximum data loss of 30 seconds
+
+
+---
+
+4. User Preferences and UI Settings
+
+Scenario 11: Retain user preferences on resume
+Given the user has selected a specific theme and toolbar config
+When they resume the interrupted exam
+Then those preferences should be reapplied
+
+Scenario 12: Restore navigator state
+Given the user has changed the navigator visibility or filter
+When the exam is resumed
+Then the same navigator configuration should be restored
+
+Scenario 13: Restore GSPS and measurements
+Given the user has created measurements or applied GSPS
+When switching between exams
+Then those should remain unchanged upon returning
+
+
+---
+
+5. Performance Requirements
+
+Scenario 14: Session restore under 2 seconds
+Given the user resumes an interrupted exam
+When the session state is restored
+Then it should complete in less than 2 seconds
+
+Scenario 15: Maintain image scroll performance
+Given multiple interrupted sessions are present
+When the user scrolls through images in a viewport
+Then scrolling speed should remain at or above 60 fps
+
+Scenario 16: Allow multiple interruptions
+Given the user has already interrupted 3 exams
+When interrupting a 4th exam
+Then the system should still allow the action and maintain integrity
+
+
+---
+
+6. Memory and IFrame Management
+
+Scenario 17: Use IFrame if memory is available
+Given the browser memory is below threshold
+When a new exam is interrupted
+Then the system should retain IFrame in memory for fast switching
+
+Scenario 18: Offload session when memory limit is exceeded
+Given the memory limit is exceeded
+When switching to another exam
+Then the system shall persist current session state and remove IFrame
+
+Scenario 19: Reload session from backend
+Given an IFrame was offloaded due to memory constraints
+When the exam is resumed
+Then the system shall reload session state from backend
+
+
+---
+
+7. Negative & Edge Cases
+
+Scenario 20: Handle browser crash without save
+Given session save failed and the browser crashes
+When the user tries to reopen exam
+Then the system shall show an appropriate error or fallback state
+
+Scenario 21: Too many IFrames opened
+Given the user has interrupted 10+ exams
+When memory limit is hit
+Then system should offload least recently used session and notify user if necessary
+
+Scenario 22: User isolation for session state
+Given one user starts an exam and interrupts it
+When another user logs in
+Then they shall not be able to see the previous user’s session state
+
+Scenario 23: Interrupted session unavailable on another workstation
+Given the user starts exam on one workstation
+When switching to another workstation
+Then interrupted session shall not be available in R1
+
+
+---
+
+8. Tool/Panel/Frontend Interactions
+
+Scenario 24: Reopen previously used tools or panels
+Given user opens a measurement tool or segmentation panel
+When session is resumed
+Then opened tools and panels should be restored to their previous state
+
+Scenario 25: Toolbar and shortcuts retained
+Given user had selected specific toolbar or shortcuts
+When returning to the interrupted exam
+Then those preferences should remain unchanged
+
+Scenario 26: AI results applied are retained
+Given AI results were loaded in the session
+When resuming the exam
+Then the same AI results should still be applied
+
+
+----------------------------4th END---------------------------
+Test Scenarios for Interrupted Workflow - GWT Format (with Titles)
+
+
+---
+
+Mapping: Requirement ID to Test Scenarios
+
+
+---
+
+QA Summary Table
+
+
+---
+
+Sample Playwright Test Skeletons (TypeScript)
+
+// Scenario 1: Switch from one exam to another without prompt
+import { test, expect } from '@playwright/test';
+
+test('Switch from Exam A to Exam B without prompt', async ({ page }) => {
+  await page.goto('/viewer/examA');
+  await page.locator('[data-testid="open-annotation-tool"]').click();
+  await page.mouse.click(200, 200); // simulating measurement
+
+  await page.locator('[data-testid="open-examB"]').click();
+
+  await expect(page.locator('[data-testid="save-popup"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="exam-title"]')).toContainText('Exam B');
+});
+
+// Scenario 2: Resume previously interrupted exam
+
+test('Resume Exam A in previous state', async ({ page }) => {
+  await page.goto('/viewer/examA');
+  await expect(page.locator('[data-testid="annotation"]')).toBeVisible();
+  await expect(page.locator('[data-testid="zoom-state"]')).toHaveAttribute('value', '150%');
+});
+
+// Scenario 10: Recover from browser crash
+
+test('Recover Exam after crash', async ({ page }) => {
+  await page.goto('/simulate-crash');
+  // Simulate browser crash recovery flow
+  await page.reload();
+  await page.goto('/viewer/examA');
+
+  await expect(page.locator('[data-testid="annotation"]')).toBeVisible();
+});
+
+
+---
+
+Let me know if you’d like all scenarios converted to code or exported in test management tools like Xray, Zephyr, or as a structured CSV!
+
+
