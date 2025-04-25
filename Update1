@@ -1,0 +1,70 @@
+async getViewportBoundingBox(
+  selector: string,
+  toolIndex: number = 0,
+  toolCount: number = 1
+): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+  centerX: number;
+  centerY: number;
+} | null> {
+  const boundingBox = await this.getBoundingBox(selector);
+  if (!this.isValidBoundingBox(boundingBox)) {
+    return null;
+  }
+
+  const { top, left, bottom, right } = boundingBox;
+  const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
+
+  // Divide viewport height into equal slots based on number of tools
+  const totalHeight = bottom - top;
+  const slotHeight = totalHeight / toolCount;
+  const slotTop = top + toolIndex * slotHeight;
+  const slotBottom = slotTop + slotHeight;
+
+  // Horizontal placement: fixed width centered
+  const slotWidth = 40;
+  const x1 = centerX - slotWidth / 2;
+  const x2 = centerX + slotWidth / 2;
+  const y1 = slotTop + 5; // slight padding
+  const y2 = slotBottom - 5;
+
+  // Adjust to viewport-relative coordinates
+  const vpLocator = this.locator(selector).last();
+  const vpBox = await vpLocator.boundingBox();
+  if (vpBox == null) {
+    return null;
+  }
+
+  return {
+    adjustedX1: x1 - vpBox.x,
+    adjustedY1: y1 - vpBox.y,
+    adjustedX2: x2 - vpBox.x,
+    adjustedY2: y2 - vpBox.y,
+    centerX,
+    centerY
+  };
+}
+
+
+
+
+
+
+
+
+const tools = ['ellipse', 'arrow', 'rectangle', 'polyline', 'distance'];
+
+for (let i = 0; i < tools.length; i++) {
+  const box = await gvstep.gv.gvCommon.getViewportBoundingBox(GV_VIEWPORT_OBJECT.viewport01, i, tools.length);
+  if (!box) continue;
+
+  const start = { x: box.adjustedX1, y: box.adjustedY1 };
+  const end = { x: box.adjustedX2, y: box.adjustedY2 };
+  const tool = tools[i];
+
+  await drawActions[tool](GV_VIEWPORT_OBJECT.viewport01, start, end);
+}
