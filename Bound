@@ -34,3 +34,35 @@ async getvalidBoundingBox(selector: string): Promise<{
     centerY
   };
 }
+
+
+
+
+
+
+
+
+
+
+const drawActions = {
+  ellipse: gvstep.gv.gvGraphicalObject.drawEllipse.bind(gvstep.gv.gvGraphicalObject),
+  arrow: gvstep.gv.gvGraphicalObject.drawArrow.bind(gvstep.gv.gvGraphicalObject),
+  rectangle: gvstep.gv.gvGraphicalObject.drawRectangle.bind(gvstep.gv.gvGraphicalObject),
+  polyline: async (vp, start, end) => {
+    const mid1 = { x: start.x + 10, y: start.y + 10 };
+    const mid2 = { x: end.x - 10, y: end.y - 10 };
+    await gvstep.gv.gvGraphicalObject.drawPolyline(vp, [start, mid1, mid2, end]);
+  },
+  distance: gvstep.gv.gvGraphicalObject.drawDistance.bind(gvstep.gv.gvGraphicalObject)
+};
+
+for (let i = 0; i < tools.length; i++) {
+  const box = await gvstep.gv.gvCommon.getViewportBoundingBox(GV_VIEWPORT_OBJECT.viewport01, i);
+  if (!box) continue;
+
+  const start = { x: box.adjustedX1, y: box.adjustedY1 };
+  const end = { x: box.adjustedX2, y: box.adjustedY2 };
+  const tool = tools[i];
+
+  await drawActions[tool](GV_VIEWPORT_OBJECT.viewport01, start, end);
+}
