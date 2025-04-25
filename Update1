@@ -216,3 +216,43 @@ for (const tool of tools) {
 
 
 
+
+
+
+
+
+
+const boxes: {
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+  centerX: number;
+  centerY: number;
+}[] = [];
+
+for (let i = 0; i < tools.length; i++) {
+  const box = await gvstep.gv.gvCommon.getViewportBoundingBox(
+    GV_VIEWPORT_OBJECT.viewport01,
+    i,
+    tools.length
+  );
+
+  if (box) boxes.push(box);
+}
+
+
+
+
+const getCoords = (tool: string) => {
+  const box = boxes[toolIndex++];
+
+  if (!box) {
+    throw new Error(`No box found for tool ${tool}`);
+  }
+
+  return {
+    start: { x: box.adjustedX1, y: box.adjustedY1 },
+    end: { x: box.adjustedX2, y: box.adjustedY2 }
+  };
+};
