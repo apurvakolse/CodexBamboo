@@ -125,3 +125,94 @@ private async isSlotOccupied(
   }
   return false;
 }
+
+
+
+
+
+----------------------------
+
+
+
+type Point = { x: number; y: number };
+
+export async function verifyGraphicalObjectsDrawn( page: Page, viewport: string, tools: string[], getCoords: (tool: string) => { start: Point; end: Point }, objectSelectors: Record<string, string>, gvObject: any ): Promise<Record<string, boolean>> { const results: Record<string, boolean> = {};
+
+const drawActions: Record<string, (vp: string, start: Point, end: Point) => Promise<void>> = { ellipse: gvObject.drawEllipse.bind(gvObject), rectangle: gvObject.drawRectangle.bind(gvObject), distance: gvObject.drawDistance.bind(gvObject),
+
+arrow: async (vp, start, end) => {
+  const adjustedStart = { x: start.x + 10, y: start.y + 10 };
+  const adjustedEnd = { x: end.x - 10, y: end.y - 10 };
+  await gvObject.drawArrow(vp, adjustedStart, adjustedEnd);
+},
+
+polyline: async (vp, start, end) => {
+  const mid1 = { x: start.x + 5, y: start.y + 5 };
+  const mid2 = { x: end.x - 5, y: end.y - 5 };
+  await gvObject.drawPolyline(vp, [start, mid1, mid2, end]);
+}
+
+};
+
+for (const tool of tools) { const { start, end } = getCoords(tool);
+
+await drawActions[tool](viewport, start, end);
+
+// Wait briefly for DOM update
+await page.waitForTimeout(200);
+
+const isVisible = await page.locator(`${objectSelectors[tool]} >> nth=0`).isVisible().catch(() => false);
+results[tool] = isVisible;
+
+}
+
+return results; }
+
+----------------------- Implementation 
+const tools = ['ellipse', 'arrow', 'rectangle', 'polyline', 'distance'];
+
+
+const objectSelectors = {
+  ellipse: GV_GRAPHICAL_OBJECT_SVG.ellipse,
+  arrow: GV_GRAPHICAL_OBJECT_SVG.arrow,
+  rectangle: GV_GRAPHICAL_OBJECT_SVG.rectangle,
+  polyline: GV_GRAPHICAL_OBJECT_SVG.polyline,
+  distance: GV_GRAPHICAL_OBJECT_SVG.distance
+};
+
+
+const boxes = [];
+
+for (let i = 0; i < tools.length; i++) {
+  const box = await gvstep.gv.gvCommon.getViewportBoundingBox(GV_VIEWPORT_OBJECT.viewport01, i, tools.length);
+  boxes.push(box);
+}
+
+let toolIndex = 0;
+const getCoords = (tool: string) => {
+  const box = boxes[toolIndex++];
+  return {
+    start: { x: box.adjustedX1, y: box.adjustedY1 },
+    end: { x: box.adjustedX2, y: box.adjustedY2 }
+  };
+};
+
+
+
+
+const results = await verifyGraphicalObjectsDrawn(
+  gvstep.page,
+  GV_VIEWPORT_OBJECT.viewport01,
+  tools,
+  getCoords,
+  objectSelectors,
+  gvstep.gv.gvGraphicalObject
+);
+
+
+for (const tool of tools) {
+  expect(results[tool]).toBe(true);
+}
+
+
+
