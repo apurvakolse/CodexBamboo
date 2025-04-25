@@ -1,0 +1,36 @@
+async getvalidBoundingBox(selector: string): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+  centerX: number;
+  centerY: number;
+} | null> {
+  const boundingBox = await this.getBoundingBox(selector);
+  if (!this.isValidBoundingBox(boundingBox)) {
+    return null;
+  }
+
+  const { top, left, bottom, right } = boundingBox;
+  const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
+
+  // Clamp within bounding box
+  const x1 = Math.max(left, centerX);
+  const y1 = Math.max(top, centerY);
+  const x2 = Math.min(right, centerX);
+  const y2 = Math.min(bottom, centerY);
+
+  // Adjust relative to the viewport container
+  const vpLocator = this.locator(selector).last();
+  const vpBox = await vpLocator.boundingBox();
+
+  return {
+    adjustedX1: x1 - vpBox.x,
+    adjustedY1: y1 - vpBox.y,
+    adjustedX2: x2 - vpBox.x,
+    adjustedY2: y2 - vpBox.y,
+    centerX,
+    centerY
+  };
+}
