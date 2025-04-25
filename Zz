@@ -1,0 +1,59 @@
+export async function verifyAllToolsDrawn(
+  page: Page,
+  gvCommon: any,
+  gvObject: any,
+  tools: string[],
+  viewport: string
+): Promise<Record<string, boolean>> {
+  const results: Record<string, boolean> = {};
+  const objectSelectors = {
+    ellipse: 'svg ellipse',
+    arrow: 'svg line',
+    rectangle: 'svg rect',
+    polyline: 'svg polyline',
+    distance: 'svg text'
+  };
+
+  for (let i = 0; i < tools.length; i++) {
+    const tool = tools[i];
+    const box = await gvCommon.getViewportBoundingBox(viewport, i, tools.length);
+    if (!box) {
+      results[tool] = false;
+      continue;
+    }
+
+    const start = { x: box.adjustedX1, y: box.adjustedY1 };
+    const end = { x: box.adjustedX2, y: box.adjustedY2 };
+
+    // Tool-specific draw logic
+    switch (tool) {
+      case 'ellipse':
+        await gvObject.drawEllipse(viewport, start, end);
+        break;
+      case 'arrow':
+        await gvObject.drawArrow(viewport, { x: start.x + 10, y: start.y + 10 }, { x: end.x - 10, y: end.y - 10 });
+        break;
+      case 'rectangle':
+        await gvObject.drawRectangle(viewport, start, end);
+        break;
+      case 'polyline':
+        const mid1 = { x: start.x + 5, y: start.y + 5 };
+        const mid2 = { x: end.x - 5, y: end.y - 5 };
+        await gvObject.drawPolyline(viewport, [start, mid1, mid2, end]);
+        break;
+      case 'distance':
+        await gvObject.drawDistance(viewport, start, end);
+        break;
+      default:
+        console.warn(`Tool not supported: ${tool}`);
+        results[tool] = false;
+        continue;
+    }
+
+    await page.waitForTimeout(200);
+    const isVisible = await page.locator(`${viewport} ${objectSelectors[tool]} >> nth=0`).isVisible().catch(() => false);
+    results[tool] = isVisible;
+  }
+
+  return results;
+}
