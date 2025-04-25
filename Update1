@@ -68,3 +68,60 @@ for (let i = 0; i < tools.length; i++) {
 
   await drawActions[tool](GV_VIEWPORT_OBJECT.viewport01, start, end);
 }
+
+
+
+
+
+
+
+
+
+const slotWidth = 40;
+const maxAttempts = 5;
+const spacing = 20;
+
+let x1: number, x2: number;
+let found = false;
+
+for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  const shift = attempt * spacing;
+  const tryX1 = centerX - slotWidth / 2 + shift;
+  const tryX2 = centerX + slotWidth / 2 + shift;
+
+  const start = { x: tryX1, y: y1 };
+  const end = { x: tryX2, y: y2 };
+
+  const hasOverlay = await this.isSlotOccupied(start, end, selector);
+  if (!hasOverlay) {
+    x1 = tryX1;
+    x2 = tryX2;
+    found = true;
+    break;
+  }
+}
+
+if (!found) {
+  return null; // no available horizontal slot found
+}
+
+
+
+private async isSlotOccupied(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  selector: string
+): Promise<boolean> {
+  const elements = await this.page.locator(`${selector} svg ellipse, ${selector} svg rect, ${selector} svg polyline`).elementHandles();
+  for (const el of elements) {
+    const box = await el.boundingBox();
+    if (!box) continue;
+
+    const overlap =
+      !(end.x < box.x || start.x > box.x + box.width ||
+        end.y < box.y || start.y > box.y + box.height);
+
+    if (overlap) return true;
+  }
+  return false;
+}
