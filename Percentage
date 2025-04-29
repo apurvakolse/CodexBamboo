@@ -1,0 +1,29 @@
+private async getPercentageBasedCoordinates(
+  selector: string,
+  myXValue: number,
+  myYValue: number
+): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+} | null> {
+  const locator = this.locator(selector).last();
+  const vpBox = await locator.boundingBox();
+  if (!vpBox) return null;
+
+  const percentX = vpBox.x + (myXValue / 100) * vpBox.width;
+  const percentY = vpBox.y + (myYValue / 100) * vpBox.height;
+
+  const adjustedX1 = percentX - vpBox.x;
+  const adjustedY1 = percentY - vpBox.y;
+  const adjustedX2 = adjustedX1 + 40;
+  const adjustedY2 = adjustedY1 + 40;
+
+  return {
+    adjustedX1,
+    adjustedY1,
+    adjustedX2,
+    adjustedY2
+  };
+}
