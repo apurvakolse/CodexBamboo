@@ -118,3 +118,46 @@ private getViewportBoundingBox(
 }
 
 
+
+
+
+
+
+
+
+
+
+
+async getViewportBoundingBox(
+  selector: string,
+  coords: {
+    adjustedX1: number;
+    adjustedY1: number;
+    adjustedX2: number;
+    adjustedY2: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+  centerX: number;
+  centerY: number;
+} | null> {
+  const vpLocator = this.locator(selector).last();
+  const vpBox = await vpLocator.boundingBox();
+  if (!vpBox) return null;
+
+  return {
+    adjustedX1: coords.adjustedX1 - vpBox.x,
+    adjustedY1: coords.adjustedY1 - vpBox.y,
+    adjustedX2: coords.adjustedX2 - vpBox.x,
+    adjustedY2: coords.adjustedY2 - vpBox.y,
+    centerX: vpBox.x + vpBox.width / 2,
+    centerY: vpBox.y + vpBox.height / 2,
+  };
+}
