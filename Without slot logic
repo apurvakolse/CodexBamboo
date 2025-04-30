@@ -1,4 +1,4 @@
-async verifyAllToolsDrawn( tools: string[], viewport: string, myXValue?: number, myYValue?: number ): Promise<Record<string, boolean>> { const results: Record<string, boolean> = {}; const objectSelectors = { ellipse: GV_GRAPHICAL_OBJECT_SVG.ellipse, arrow: GV_GRAPHICAL_OBJECT_SVG.arrow, rectangle: GV_GRAPHICAL_OBJECT_SVG.rectangle, polyline: GV_GRAPHICAL_OBJECT_SVG.polyline, distance: GV_GRAPHICAL_OBJECT_SVG.distance, };
+ìasync verifyAllToolsDrawn( tools: string[], viewport: string, myXValue?: number, myYValue?: number ): Promise<Record<string, boolean>> { const results: Record<string, boolean> = {}; const objectSelectors = { ellipse: GV_GRAPHICAL_OBJECT_SVG.ellipse, arrow: GV_GRAPHICAL_OBJECT_SVG.arrow, rectangle: GV_GRAPHICAL_OBJECT_SVG.rectangle, polyline: GV_GRAPHICAL_OBJECT_SVG.polyline, distance: GV_GRAPHICAL_OBJECT_SVG.distance, };
 
 for (let i = 0; i < tools.length; i++) { const tool = tools[i]; let coords;
 
@@ -51,3 +51,91 @@ results[tool] = isVisible;
 
 return results; }
 
+
+
+
+
+
+
+
+
+
+
+
+async verifyAllToolsDrawn(
+  tools: string[],
+  viewport: string,
+  myXValue?: number,
+  myYValue?: number
+): Promise<Record<string, boolean>> {
+  const results: Record<string, boolean> = {};
+  const objectSelectors = {
+    ellipse: GV_GRAPHICAL_OBJECT_SVG.ellipse,
+    arrow: GV_GRAPHICAL_OBJECT_SVG.arrow,
+    rectangle: GV_GRAPHICAL_OBJECT_SVG.rectangle,
+    polyline: GV_GRAPHICAL_OBJECT_SVG.polyline,
+    distance: GV_GRAPHICAL_OBJECT_SVG.distance,
+  };
+
+  for (const tool of tools) {
+    let coords;
+    if (myXValue !== undefined && myYValue !== undefined) {
+      coords = await this.gvCommonInstance.getPercentageBasedCoordinates(
+        viewport,
+        myXValue,
+        myYValue
+      );
+    } else {
+      console.warn(`Missing coordinates for tool: ${tool}`);
+      results[tool] = false;
+      continue;
+    }
+
+    if (!coords) {
+      results[tool] = false;
+      continue;
+    }
+
+    const box = await this.gvCommonInstance.getViewportBoundingBox(viewport, coords);
+    if (!box) {
+      results[tool] = false;
+      continue;
+    }
+
+    const start = { x: box.adjustedX1, y: box.adjustedY1 };
+    const end = { x: box.adjustedX2, y: box.adjustedY2 };
+
+    switch (tool) {
+      case 'ellipse':
+        await this.drawEllipse(viewport, start, end);
+        break;
+      case 'arrow':
+        await this.drawArrow(viewport, { x: start.x + 10, y: start.y + 10 }, { x: end.x - 10, y: end.y - 10 });
+        break;
+      case 'rectangle':
+        await this.drawRectangle(viewport, start, end);
+        break;
+      case 'polyline':
+        const mid1 = { x: start.x + 30, y: start.y + 30 };
+        const mid2 = { x: end.x - 50, y: end.y - 50 };
+        await this.drawPolyline(viewport, [start, mid1, mid2, end]);
+        break;
+      case 'distance':
+        await this.drawDistance(viewport, { x: start.x + 10, y: start.y + 10 }, { x: end.x - 10, y: end.y - 10 });
+        break;
+      default:
+        console.warn(`Tool not supported: ${tool}`);
+        results[tool] = false;
+        continue;
+    }
+
+    const isVisible = await this.locator(`${objectSelectors[tool]}`)
+      .first()
+      .isVisible()
+      .catch(() => false);
+
+    results[tool] = isVisible;
+  }
+
+  return results;
+}
