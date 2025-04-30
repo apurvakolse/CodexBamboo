@@ -12,17 +12,19 @@ async getViewportBoundingBox(
   centerX: number;
   centerY: number;
 } | null> {
-  const boundingBox = await this.getBoundingBox(selector);
-  if (!this.isValidBoundingBox(boundingBox)) return null;
-
-  const { top, left, bottom, right } = boundingBox;
-  const centerX = (left + right) / 2;
-  const centerY = (top + bottom) / 2;
-
   const vpLocator = this.locator(selector).last();
   const vpBox = await vpLocator.boundingBox();
   if (!vpBox) return null;
 
+  const top = vpBox.y;
+  const bottom = vpBox.y + vpBox.height;
+  const left = vpBox.x;
+  const right = vpBox.x + vpBox.width;
+
+  const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
+
+  // Percentage logic with slots
   if (myXValue !== undefined && myYValue !== undefined) {
     const totalHeight = bottom - top;
     const slotHeight = totalHeight / toolCount;
@@ -47,7 +49,7 @@ async getViewportBoundingBox(
     };
   }
 
-  // Fallback to slot logic
+  // Pure slot logic
   const slotHeight = (bottom - top) / toolCount;
   const slotTop = top + toolIndex * slotHeight;
   const slotBottom = slotTop + slotHeight;
