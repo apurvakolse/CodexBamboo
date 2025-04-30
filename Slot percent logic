@@ -146,3 +146,39 @@ private async getPercentageBasedCoordinates(
 
 
 
+-------<>-----------<>---'xxzxzzzzzz
+private async getPercentageBasedCoordinates(
+  selector: string,
+  myXValue: number,
+  myYValue: number,
+  slotTop?: number,
+  slotHeight?: number
+): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+} | null> {
+  const locator = this.locator(selector).last();
+  const vpBox = await locator.boundingBox();
+  if (!vpBox) return null;
+
+  // Derive slotTop and slotHeight from vpBox if not provided
+  const effectiveSlotTop = slotTop ?? vpBox.y;
+  const effectiveSlotHeight = slotHeight ?? vpBox.height;
+
+  const percentX = vpBox.x + (myXValue / 100) * vpBox.width;
+  const percentY = effectiveSlotTop + (myYValue / 100) * effectiveSlotHeight;
+
+  const adjustedX1 = percentX - vpBox.x;
+  const adjustedY1 = percentY - vpBox.y;
+  const adjustedX2 = adjustedX1 + 40;
+  const adjustedY2 = adjustedY1 + 40;
+
+  return {
+    adjustedX1,
+    adjustedY1,
+    adjustedX2,
+    adjustedY2,
+  };
+}
