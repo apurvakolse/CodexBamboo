@@ -15,49 +15,93 @@ async getViewportBoundingBox(
   const boundingBox = await this.getBoundingBox(selector);
   if (!this.isValidBoundingBox(boundingBox)) return null;
 
-  const { top, left, bottom, right } = boundingBox;
+  const { top, left, bottom, right } = boundingBox!;
   const centerX = (left + right) / 2;
   const centerY = (top + bottom) / 2;
 
-  // Divide viewport height into equal slots
-  const totalHeight = bottom - top;
-  const slotHeight = totalHeight / toolCount;
+  // If percentage values are provided, use percentage-based helper
+  if (myXValue !== undefined && myYValue !== undefined) {
+    const totalHeight = bottom - top;
+    const slotHeight = totalHeight / toolCount;
+    const slotTop = top + toolIndex * slotHeight;
+
+    const percentCoords = await this.getPercentageBasedCoordinates(
+      selector,
+      myXValue,
+      myYValue,
+      slotTop,
+      slotHeight
+    );
+
+    if (!percentCoords) return null;
+
+    return {
+      ...percentCoords,
+      centerX,
+      centerY,
+    };
+  }
+
+  // Fallback to slot-only logic
+  const slotHeight = (bottom - top) / toolCount;
   const slotTop = top + toolIndex * slotHeight;
   const slotBottom = slotTop + slotHeight;
 
-  // Get viewport relative bounding box
+  const slotWidth = 40;
+  const x1 = centerX - slotWidth / 2;
+  const x2 = centerX + slotWidth / 2;
+  const y1 = slotTop + 5;
+  const y2 = slotBottom - 5;
+
   const vpLocator = this.locator(selector).last();
   const vpBox = await vpLocator.boundingBox();
   if (!vpBox) return null;
 
-  let adjustedX1, adjustedY1, adjustedX2, adjustedY2;
+  return {
+    adjustedX1: x1 - vpBox.x,
+    adjustedY1: y1 - vpBox.y,
+    adjustedX2: x2 - vpBox.x,
+    adjustedY2: y2 - vpBox.y,
+    centerX,
+    centerY,
+  };
+}
 
-  if (myXValue !== undefined && myYValue !== undefined) {
-    const percentX = left + (myXValue / 100) * (right - left);
-    const percentY = slotTop + (myYValue / 100) * slotHeight;
 
-    adjustedX1 = percentX - vpBox.x;
-    adjustedY1 = percentY - vpBox.y;
-    adjustedX2 = adjustedX1 + 40;
-    adjustedY2 = adjustedY1 + 40;
-  } else {
-    const x1 = centerX - 20;
-    const x2 = centerX + 20;
-    const y1 = slotTop + 5;
-    const y2 = slotBottom - 5;
+private async getPercentageBasedCoordinates(
+  selector: string,
+  myXValue: number,
+  myYValue: number,
+  slotTop: number,
+  slotHeight: number
+): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+} | null> {
+  const locator = this.locator(selector).last();
+  const vpBox = await locator.boundingBox();
+  if (!vpBox) return null;
 
-    adjustedX1 = x1 - vpBox.x;
-    adjustedY1 = y1 - vpBox.y;
-    adjustedX2 = x2 - vpBox.x;
-    adjustedY2 = y2 - vpBox.y;
-  }
+  const percentX = vpBox.x + (myXValue / 100) * vpBox.width;
+  const percentY = slotTop + (myYValue / 100) * slotHeight;
+
+  const adjustedX1 = percentX - vpBox.x;
+  const adjustedY1 = percentY - vpBox.y;
+  const adjustedX2 = adjustedX1 + 40;
+  const adjustedY2 = adjustedY1 + 40;
 
   return {
     adjustedX1,
     adjustedY1,
     adjustedX2,
     adjustedY2,
-    centerX,
-    centerY,
   };
 }
+
+
+
+
+
+
