@@ -1,0 +1,63 @@
+async getViewportBoundingBox(
+  selector: string,
+  toolIndex: number = 0,
+  toolCount: number = 1,
+  myXValue?: number,
+  myYValue?: number
+): Promise<{
+  adjustedX1: number;
+  adjustedY1: number;
+  adjustedX2: number;
+  adjustedY2: number;
+  centerX: number;
+  centerY: number;
+} | null> {
+  const boundingBox = await this.getBoundingBox(selector);
+  if (!this.isValidBoundingBox(boundingBox)) return null;
+
+  const { top, left, bottom, right } = boundingBox;
+  const centerX = (left + right) / 2;
+  const centerY = (top + bottom) / 2;
+
+  // Divide viewport height into equal slots
+  const totalHeight = bottom - top;
+  const slotHeight = totalHeight / toolCount;
+  const slotTop = top + toolIndex * slotHeight;
+  const slotBottom = slotTop + slotHeight;
+
+  // Get viewport relative bounding box
+  const vpLocator = this.locator(selector).last();
+  const vpBox = await vpLocator.boundingBox();
+  if (!vpBox) return null;
+
+  let adjustedX1, adjustedY1, adjustedX2, adjustedY2;
+
+  if (myXValue !== undefined && myYValue !== undefined) {
+    const percentX = left + (myXValue / 100) * (right - left);
+    const percentY = slotTop + (myYValue / 100) * slotHeight;
+
+    adjustedX1 = percentX - vpBox.x;
+    adjustedY1 = percentY - vpBox.y;
+    adjustedX2 = adjustedX1 + 40;
+    adjustedY2 = adjustedY1 + 40;
+  } else {
+    const x1 = centerX - 20;
+    const x2 = centerX + 20;
+    const y1 = slotTop + 5;
+    const y2 = slotBottom - 5;
+
+    adjustedX1 = x1 - vpBox.x;
+    adjustedY1 = y1 - vpBox.y;
+    adjustedX2 = x2 - vpBox.x;
+    adjustedY2 = y2 - vpBox.y;
+  }
+
+  return {
+    adjustedX1,
+    adjustedY1,
+    adjustedX2,
+    adjustedY2,
+    centerX,
+    centerY,
+  };
+}
