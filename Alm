@@ -1,0 +1,161 @@
+Here's the complete and correctly sequenced implementation for all parts of your SealM integration flow — with testDataPath support added throughout, and all problematic syntax safely replaced (using 《 instead of () so nothing cuts off.
+
+
+---
+
+✅ PART 1: Modify createFeatureFile.ts to add testDataPath under each Scenario
+
+A. Declare testDataPath variable
+
+Place this outside the processLine() function:
+
+let testDataPath = '';
+
+
+---
+
+B. Updated processLine() function
+
+Replace your existing processLine() with the following:
+
+function processLine(line: string) {
+  const trimmedLine = line.trim();
+
+  // Part A: Extract testDataPath from block comment
+  if (trimmedLine.startsWith('/*') && trimmedLine.includes('testDataPath')) {
+    const match = trimmedLine.match(/testDataPath\s*:\s*(.*)/);
+    if (match && match[1]) {
+      testDataPath = match[1].split('*/')[0].trim();
+    }
+  }
+
+  // Part B: Extract Requirement Title
+  if (trimmedLine.startsWith('// RequirementTitle:')) {
+    requirementTitle = trimmedLine.split(':')[1]?.trim() || '';
+    featureFileContent += `Feature: ${requirementTitle}\n`;
+    return;
+  }
+
+  // Part C: Extract Scenario title
+  if (trimmedLine.startsWith('test《')) {
+    const match = trimmedLine.match(/test《\s*["'`](.*?)["'`]/);
+    if (match) {
+      featureFileContent += `\n  Scenario: ${match[1]}\n`;
+
+      if (testDataPath) {
+        featureFileContent += `    # testDataPath: ${testDataPath}\n`;
+        testDataPath = '';
+      }
+    }
+  }
+
+  // Part D: Extract test.step
+  if (trimmedLine.startsWith('await test.step《')) {
+    const match = trimmedLine.match(/test\.step《\s*["'`](.*?)["'`]/);
+    if (match) {
+      featureFileContent += `    And ${match[1]}\n`;
+    }
+  }
+
+  // Part E: Metadata (Type, Priority, etc.)
+  if (trimmedLine.startsWith('// Type:')) {
+    const typeValue = trimmedLine.split(':')[1]?.trim();
+    featureFileContent += `    # Type: ${typeValue}\n`;
+  }
+
+  if (trimmedLine.startsWith('// Priority:')) {
+    const priorityValue = trimmedLine.split(':')[1]?.trim();
+    featureFileContent += `    # Priority: ${priorityValue}\n`;
+  }
+}
+
+
+---
+
+✅ PART 2: Modify sendTestCaseToSealm.ts to extract testDataPath as Notes
+
+A. Declare notes variable
+
+Inside processFeatureFile(), near the top:
+
+let notes = '';
+
+
+---
+
+B. Inside line-reading loop in processFeatureFile()
+
+Inside the for await (const line of rl) loop:
+
+if (trimmedLine.startsWith('# testDataPath:')) {
+  notes = trimmedLine.replace('# testDataPath:', '').trim();
+}
+
+
+---
+
+C. Pass notes to createFinalJson()
+
+Inside handleScenarioLine() or wherever you prepare the final JSON:
+
+const finalJson = await createFinalJson(
+  requirementTitle,
+  ScenarioToPrint,
+  testCaseSteps,
+  itemTypeId,
+  notes
+);
+
+
+---
+
+✅ PART 3: Modify createFinalJson() to accept and inject notes
+
+A. Update function signature
+
+In createFinalJson():
+
+async function createFinalJson(
+  requirementTitle: string,
+  scenario: string,
+  testCaseSteps: any[],
+  itemTypeId: string,
+  notes: string
+)
+
+
+---
+
+B. Add notes to the JSON template substitution
+
+Ensure your .replace() chain contains this:
+
+.replace('{{notes}}', notes);
+
+
+---
+
+✅ PART 4: Update the JSON Template
+
+In the file used as the JSON template, ensure this field exists:
+
+"notes": "{{notes}}"
+
+This ensures the extracted testDataPath gets placed correctly into the final uploaded test case.
+
+
+---
+
+Done!
+
+Now your complete flow is:
+
+.ts → .feature: extracts testDataPath comment and inserts it under each Scenario.
+
+.feature → JSON: extracts # testDataPath: and stores as notes.
+
+JSON → SealM: sends notes with test case via API.
+
+
+Let me know if you’d like the same implementation written using actual ( instead of 《 for final use!
+
