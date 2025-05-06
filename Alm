@@ -124,6 +124,87 @@ async function createFinalJson(
 )
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function handleTestDataPath(
+  line: string,
+  isCollectingBlock: boolean,
+  foundTestData: boolean,
+  buffer: string[]
+): {
+  isCollectingBlock: boolean;
+  foundTestData: boolean;
+  buffer: string[];
+} {
+  const trimmedLine = line.trim();
+  let collecting = isCollectingBlock;
+  let hasTestData = foundTestData;
+  let tempBuffer = [...buffer];
+
+  const containsStart = trimmedLine.includes('/*');
+  const containsEnd = trimmedLine.includes('*/');
+  const containsTestData = trimmedLine.includes('testDataPath');
+
+  // Start of block
+  if (!collecting && containsStart) {
+    collecting = true;
+    if (containsTestData) hasTestData = true;
+
+    const lineWithoutStart = trimmedLine.replace('/*', '').trim();
+    const content = containsEnd ? lineWithoutStart.replace('*/', '').trim() : lineWithoutStart;
+    if (content) tempBuffer.push(content);
+
+    if (containsEnd) {
+      collecting = false;
+      if (!hasTestData) tempBuffer = [];
+      hasTestData = false;
+    }
+  }
+
+  // Inside block
+  else if (collecting) {
+    if (containsTestData) hasTestData = true;
+
+    if (containsEnd) {
+      const content = trimmedLine.replace('*/', '').trim();
+      if (content) tempBuffer.push(content);
+
+      collecting = false;
+      if (!hasTestData) tempBuffer = [];
+      hasTestData = false;
+    } else {
+      tempBuffer.push(trimmedLine);
+    }
+  }
+
+  return {
+    isCollectingBlock: collecting,
+    foundTestData: hasTestData,
+    buffer: tempBuffer,
+  };
+}
+
 ---
 
 B. Add notes to the JSON template substitution
