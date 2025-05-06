@@ -1,0 +1,67 @@
+function handleTestDataPath(
+  line: string,
+  isCollectingBlock: boolean,
+  foundTestData: boolean,
+  buffer: string[]
+): {
+  isCollectingBlock: boolean;
+  foundTestData: boolean;
+  buffer: string[];
+} {
+  const trimmedLine = line.trim();
+  let collecting = isCollectingBlock;
+  let hasTestData = foundTestData;
+  let tempBuffer = [...buffer];
+
+  if (isStartOfBlock(trimmedLine, collecting)) {
+    ({ collecting, hasTestData, tempBuffer } = handleStart(trimmedLine, hasTestData, tempBuffer));
+  } else if (collecting) {
+    ({ collecting, hasTestData, tempBuffer } = handleInside(trimmedLine, hasTestData, tempBuffer));
+  }
+
+  return {
+    isCollectingBlock: collecting,
+    foundTestData: hasTestData,
+    buffer: tempBuffer,
+  };
+}
+
+function isStartOfBlock(line: string, collecting: boolean): boolean {
+  return !collecting && line.includes('/*');
+}
+
+function handleStart(line: string, hasTestData: boolean, buffer: string[]) {
+  let collecting = true;
+  if (line.includes('testDataPath')) hasTestData = true;
+
+  let content = line.replace('/*', '').trim();
+  const ends = content.includes('*/');
+  if (ends) content = content.replace('*/', '').trim();
+  if (content) buffer.push(content);
+
+  if (ends) {
+    collecting = false;
+    if (!hasTestData) buffer = [];
+    hasTestData = false;
+  }
+
+  return { collecting, hasTestData, tempBuffer: buffer };
+}
+
+function handleInside(line: string, hasTestData: boolean, buffer: string[]) {
+  if (line.includes('testDataPath')) hasTestData = true;
+
+  const ends = line.includes('*/');
+  let collecting = !ends;
+
+  if (ends) {
+    const content = line.replace('*/', '').trim();
+    if (content) buffer.push(content);
+    if (!hasTestData) buffer = [];
+    hasTestData = false;
+  } else {
+    buffer.push(line);
+  }
+
+  return { collecting, hasTestData, tempBuffer: buffer };
+}
