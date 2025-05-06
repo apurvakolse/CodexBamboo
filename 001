@@ -122,3 +122,66 @@ function handleTestDataPath(
 
   return { isCollectingBlock: collecting, foundTestData: hasTestData, buffer: tempBuffer };
 }
+
+
+
+
+
+
+
+
+
+function handleTestDataPath(
+  line: string,
+  isCollectingBlock: boolean,
+  foundTestData: boolean,
+  buffer: string[]
+): {
+  isCollectingBlock: boolean;
+  foundTestData: boolean;
+  buffer: string[];
+} {
+  const trimmedLine = line.trim();
+  let collecting = isCollectingBlock;
+  let hasTestData = foundTestData;
+  let tempBuffer = [...buffer];
+
+  const isStart = !collecting && trimmedLine.includes('/*');
+  const isEnd = trimmedLine.includes('*/');
+  const hasKeyword = trimmedLine.includes('testDataPath');
+
+  if (isStart) {
+    collecting = true;
+    if (hasKeyword) hasTestData = true;
+
+    let content = trimmedLine.replace('/*', '').replace('*/', '').trim();
+    if (content) tempBuffer.push(content);
+
+    if (isEnd) {
+      collecting = false;
+      if (!hasTestData) tempBuffer = [];
+      hasTestData = false;
+    }
+
+    return { isCollectingBlock: collecting, foundTestData: hasTestData, buffer: tempBuffer };
+  }
+
+  if (!collecting) {
+    return { isCollectingBlock: collecting, foundTestData: hasTestData, buffer: tempBuffer };
+  }
+
+  if (hasKeyword) hasTestData = true;
+
+  if (isEnd) {
+    const content = trimmedLine.replace('*/', '').trim();
+    if (content) tempBuffer.push(content);
+
+    collecting = false;
+    if (!hasTestData) tempBuffer = [];
+    hasTestData = false;
+  } else {
+    tempBuffer.push(trimmedLine);
+  }
+
+  return { isCollectingBlock: collecting, foundTestData: hasTestData, buffer: tempBuffer };
+}
