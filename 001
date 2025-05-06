@@ -65,3 +65,60 @@ function handleInside(line: string, hasTestData: boolean, buffer: string[]) {
 
   return { collecting, hasTestData, tempBuffer: buffer };
 }
+
+
+
+
+
+
+
+function handleTestDataPath(
+  line: string,
+  isCollectingBlock: boolean,
+  foundTestData: boolean,
+  buffer: string[]
+): {
+  isCollectingBlock: boolean;
+  foundTestData: boolean;
+  buffer: string[];
+} {
+  const trimmedLine = line.trim();
+  let collecting = isCollectingBlock;
+  let hasTestData = foundTestData;
+  let tempBuffer = [...buffer];
+
+  const isStart = !collecting && trimmedLine.includes('/*');
+  const isEnd = trimmedLine.includes('*/');
+
+  if (isStart) {
+    collecting = true;
+    if (trimmedLine.includes('testDataPath')) hasTestData = true;
+
+    const content = trimmedLine.replace('/*', '').replace('*/', '').trim();
+    if (content) tempBuffer.push(content);
+
+    if (isEnd) {
+      collecting = false;
+      if (!hasTestData) tempBuffer = [];
+      hasTestData = false;
+    }
+
+    return { isCollectingBlock: collecting, foundTestData: hasTestData, buffer: tempBuffer };
+  }
+
+  if (collecting) {
+    if (trimmedLine.includes('testDataPath')) hasTestData = true;
+
+    const content = trimmedLine.replace('*/', '').trim();
+    if (isEnd) {
+      if (content) tempBuffer.push(content);
+      collecting = false;
+      if (!hasTestData) tempBuffer = [];
+      hasTestData = false;
+    } else {
+      tempBuffer.push(trimmedLine);
+    }
+  }
+
+  return { isCollectingBlock: collecting, foundTestData: hasTestData, buffer: tempBuffer };
+}
