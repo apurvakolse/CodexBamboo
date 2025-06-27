@@ -1,0 +1,15 @@
+ReqID,Title,Test Type,Category
+SEGV-SRO-76,Auto-apply hanging protocol on viewer launch,End-to-End,Positive
+SEGV-SRO-53,System shall provide a set of default hanging protocols,End-to-End,Positive
+SEGV-SSRS-305,Display 1x1 viewport on primary monitor with first series,Functional,Positive
+SEGV-SSRS-305,Missing first series in study,Functional,Negative
+SEGV-SSRS-305,Viewport configuration corrupted,Functional,Edge
+SEGV-SSRS-297,Compute confidence score for matching learncases,Functional,Positive
+SEGV-SSRS-297,Similarity match fails due to unmatched criteria,Functional,Negative
+SEGV-SSRS-297,Multiple learncases with same confidence score,Functional,Edge
+SEGV-SSRS-284,HP Service shall persist learncase data,Service Validation,Positive
+SEGV-SSRS-284,Persistence fails due to network error,Service Validation,Negative
+SEGV-SSRS-294,SRP Engine returns 3 smart protocols by default,Functional,Positive
+SEGV-SSRS-294,Engine returns less/more than 3 protocols,Functional,Edge
+SEGV-SSRS-299,Provide default HP for each supported/unsupported modality,Functional,Positive
+SEGV-SSRS-299,Unsupported modality fails to map HP,Functional,Negative
