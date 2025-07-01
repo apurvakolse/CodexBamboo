@@ -1,0 +1,168 @@
+Perfect, Apurva. Let’s work on this new pair:
+
+
+---
+
+🟩 System Requirement: SEGV-SRO-390
+
+> “The system shall auto-save the learn case when a hanging protocol is changed by the user before the reading begins.”
+
+
+
+
+---
+
+🟨 Sub-System Requirement: SEGV-SSRS-304
+
+> “The system shall trigger learn case save automatically if the hanging protocol is changed by the user before the reading starts.”
+
+
+
+
+---
+
+✅ End-to-End Test Cases for SRO-390
+
+
+---
+
+🧪 Test Case 1: Verify that the system auto-saves a learn case when the user modifies the hanging protocol before starting to read
+
+Step	Description
+
+1	Launch the viewer with a study
+2	Let the system apply an initial hanging protocol
+3	Before reading (e.g., before report opens or before measurement tools are used), user changes layout or mapping
+✅	Expected: System auto-triggers Learn Case save with the updated layout/rendering
+✅	Validation: New Learn Case is visible in the Learn Case DB and associated with the study context
+
+
+
+---
+
+🧪 Test Case 2: Verify that auto-save does not trigger if user does not change the hanging protocol
+
+Step	Description
+
+1	Launch the viewer with a study and allow auto-applied HP
+2	Do not interact with layout/rendering or override anything
+3	Begin reading
+✅	Expected: No new Learn Case is saved
+✅	Validation: Learn Case DB remains unchanged
+
+
+
+---
+
+🧪 Test Case 3: Verify that system avoids duplicate Learn Case saves if user makes repeated changes before reading
+
+Step	Description
+
+1	Launch viewer with a study and auto-applied HP
+2	Before reading, user toggles between layouts multiple times
+✅	Expected: System either saves only the final state or merges changes into a single Learn Case
+✅	Validation: Only one new Learn Case is persisted per session per study context
+
+
+
+---
+
+🟨 Test Scenarios for SSRS-304
+
+
+---
+
+✅ Positive Test Scenarios
+
+1. Verify that the system triggers Learn Case save automatically when the user changes the layout before reading
+
+
+2. Verify that changes to rendering parameters (zoom, WW/WL, orientation) before reading trigger Learn Case auto-save
+
+
+3. Verify that display group reordering or viewport remapping before reading also results in a Learn Case save
+
+
+4. Verify that Learn Case save is triggered only once per modification session even if multiple changes are made rapidly
+
+
+5. Verify that the Learn Case saved contains both layout and rendering changes as part of the metadata
+
+
+6. Verify that the auto-saved Learn Case is marked as system-triggered in the audit/logs
+
+
+7. Verify that Learn Case is saved with correct timestamp and study context (StudyInstanceUID, Modality, etc.)
+
+
+
+
+---
+
+❌ Negative Test Scenarios
+
+8. Verify that no Learn Case is saved if the viewer is closed before any changes are made
+
+
+9. Verify that no Learn Case is saved if layout is modified after the reading has begun (i.e., post-report start)
+
+
+10. Verify that Learn Case is not saved if the viewer crashes or loses connection before the save call completes
+
+
+11. Verify that incomplete rendering changes (e.g., WW/WL changed but not confirmed) do not trigger auto-save
+
+
+12. Verify that auto-save fails gracefully and logs an error if the Learn Case DB is unavailable
+
+
+
+
+---
+
+⚠️ Edge Test Scenarios
+
+13. Verify auto-save behavior when the same user opens the study multiple times and makes different changes before reading
+
+
+14. Verify that a new Learn Case is saved if a different user modifies the HP on the same study before reading
+
+
+15. Verify that the system handles auto-save correctly in multi-tab or multi-monitor viewer sessions
+
+
+16. Verify that auto-save is skipped or delayed if system resources are critically low (CPU, memory, disk)
+
+
+17. Verify that multiple users editing the same study do not cause race conditions or duplicate Learn Cases
+
+
+
+
+---
+
+🧠 Technical Insight:
+
+Trigger Point: HP modification event before ReadingStartTime (which may be marked by first diagnostic interaction or report launch)
+
+Metadata Saved: Layout config, rendering params, user ID, timestamp, study context
+
+Storage: Learn Case DB (likely a NoSQL or structured document store)
+
+Monitoring: UI events like layout change, drag-drop, rendering adjustment must be hooked
+
+
+
+---
+
+Would you like these now in:
+
+Gherkin format?
+
+Detailed manual test cases (Test Steps, Test Data, Expected)?
+
+Playwright automation scaffolding?
+
+
+Or ready for the next SRO-SSRS pair?
+
