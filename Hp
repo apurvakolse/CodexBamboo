@@ -1050,3 +1050,193 @@ AC9: Function state persists correctly across HP re-applications	10, 17, 33
 
 Let me know if you’d like these spun into a Gherkin feature file, manual test case tables, or automation scaffolds next!
 
+-----------------76------
+Here’s the deep-dive breakdown for SRO-76 and its two child SSRS, with every scenario starting with “Verify”, separated by SRO vs. SSRS, and ending with an AC-to-test mapping.
+
+
+---
+
+🟩 SRO-76
+
+Requirement:
+
+> “The system shall auto-apply a single hanging protocol when the viewer is launched for a given study.”
+
+
+
+🔹 End-to-End Test Cases for SRO-76
+
+1. Verify that on viewer launch, the SRP engine is queried for the best-matched hanging protocol.
+
+
+2. Verify that the hanging protocol with the highest confidence score is the one applied.
+
+
+3. Verify that only one hanging protocol is applied—even if multiple protocols exceed the confidence threshold.
+
+
+4. Verify that manual user overrides after launch do not re-trigger auto-application.
+
+
+5. Verify that if the SRP engine returns no matches, the system falls back to the default hanging protocol.
+
+
+6. Verify that the applied hanging protocol’s layout and rendering exactly match the Learn Case definition.
+
+
+7. Verify that audit logs record which hanging protocol was auto-applied, including its ID and confidence score.
+
+
+
+
+---
+
+🟨 SSRS-288
+
+Requirement:
+
+> “The front-end application shall apply the viewport layout and image-display-group mapping as defined in the selected hanging protocol.”
+
+
+
+🔍 Breakdown of Rendering Logic
+
+Aspect	Source in HP	Notes
+
+Grid Definition (rows × cols)	HP.layout.grid	e.g., “2x2”, “3x3”
+Monitor Mapping	HP.layout.monitorIds	Primary vs. secondary monitor targets
+Display-Group → Viewport Mapping	HP.mapping.groups	e.g., “axial → viewport1”
+Series Selection Order	HP.mapping.seriesKey	e.g., by SeriesNumber or AcquisitionTime
+Multi-Monitor Splits	HP.layout.splits	e.g., 2 viewports on each monitor
+
+
+🔹 Test Scenarios for SSRS-288
+
+✅ Positive
+
+1. Verify that the grid definition from the HP (e.g., 2×2) is rendered correctly in the viewer.
+
+
+2. Verify that each image display group is mapped to its designated viewport.
+
+
+3. Verify that multi-monitor layouts split viewports across monitors as defined.
+
+
+4. Verify that series selection for each display group uses the specified DICOM tag (SeriesNumber).
+
+
+5. Verify that if two display groups map to the same viewport, the viewer throws a layout conflict warning.
+
+
+
+❌ Negative
+
+6. Verify that a malformed grid definition (e.g., “2×”) results in fallback to a safe default (1×1).
+
+
+7. Verify that missing display-group entries leave the affected viewport blank but do not crash.
+
+
+8. Verify that invalid monitor IDs in the HP cause all viewports to render on the primary monitor.
+
+
+
+⚠️ Edge
+
+9. Verify that extra display-group entries beyond grid capacity are ignored with a logged warning.
+
+
+10. Verify that swapping monitor order (primary/secondary reversed) still honors the HP’s monitorIds.
+
+
+11. Verify that the viewport mapping works when the same display group appears multiple times.
+
+
+12. Verify that layout is reapplied correctly if the HP is switched mid-session.
+
+
+
+
+---
+
+🟨 SSRS-307
+
+Requirement:
+
+> “The front-end application shall wait for a response from the HP Service up to a configurable time threshold before applying a default hanging protocol.”
+
+
+
+🔍 Breakdown of Timeout Logic
+
+Aspect	Configuration	Notes
+
+Timeout Threshold	config.hpServiceTimeoutMs	e.g., 3000 ms
+Fallback Protocol	config.defaultHangingProtocol	ID of default HP to apply after TO
+Response Handling	HPService API callback	success vs. failure vs. late
+Logging	HPServiceTimeoutEvent	logs time, study UID, action
+
+
+🔹 Test Scenarios for SSRS-307
+
+✅ Positive
+
+1. Verify that the system waits up to the configured timeout before applying any protocol.
+
+
+2. Verify that if the HP Service responds in-time, its protocol is applied without fallback.
+
+
+3. Verify that raising the timeout value delays fallback accordingly.
+
+
+
+❌ Negative
+
+4. Verify that if no response arrives within the timeout, the default hanging protocol is applied.
+
+
+5. Verify that a failed or malformed response (HTTP 500 or invalid JSON) triggers fallback.
+
+
+6. Verify that multiple sequential timeouts do not crash the viewer but always apply default HP.
+
+
+
+⚠️ Edge
+
+7. Verify that setting timeout=0 results in immediate fallback without waiting.
+
+
+8. Verify that a response arriving just after timeout is ignored and does not override the fallback.
+
+
+9. Verify that rapid toggling of this timeout config (e.g., via admin panel) is picked up on next launch.
+
+
+10. Verify that a late valid response is logged but does not disrupt the already-applied default layout.
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+Acceptance Criterion	Covered By
+
+AC1: System auto-applies only one HP on viewer launch	SRO-76 TC 1, 2, 3
+AC2: Applies the HP with highest confidence score	SRO-76 TC 2
+AC3: Falls back to default HP if service fails or times out	SRO-76 TC 5; SSRS-307 TC 4
+AC4: Respects the configurable timeout threshold	SSRS-307 TC 1, 3
+AC5: Layout & mapping must match HP definition exactly	SRO-76 TC 6; SSRS-288 TC 1-5, 9
+AC6: HP Service timeout events are logged for audit	SRO-76 TC 7; SSRS-307 TC 10
+AC7: Invalid HP definitions cause safe fallback without crash	SSRS-288 TC 6, 7; SSRS-307 TC 5
+
+
+
+---
+
+Let me know if you’d like these in Gherkin, a spreadsheet-style matrix, or as automation skeletons next!
+
