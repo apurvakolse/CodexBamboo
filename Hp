@@ -409,4 +409,161 @@ Requirement: "The system shall wait for a response from the HP Service up to a c
 
 Let me know if you’d like the same format for another SRO next.
 
+---------------72----------------
+Absolutely, Apurva. Here's the full breakdown for:
+
+
+---
+
+🟩 SRO-72
+
+Requirement: "The system shall allow the user to select an alternate hanging protocol from a list of available hanging protocols."
+
+> 🔁 This requirement focuses on enabling the user-driven selection of an HP (instead of automatic SRP selection) — directly involving user interaction with UI (Learn dropdown) and confirming HP application.
+
+
+
+
+---
+
+✅ End-to-End Test Scenarios for SRO-72
+
+1. Verify that the system displays a list of available hanging protocols for user selection when the viewer is launched.
+
+
+2. Verify that the user can open the list of hanging protocols through the UI dropdown.
+
+
+3. Verify that the viewer updates its layout when a user selects a hanging protocol from the list.
+
+
+4. Verify that only the selected hanging protocol is applied and no auto-selection overrides it.
+
+
+5. Verify that the viewer maintains state consistency after switching from an auto-applied HP to a manually selected one.
+
+
+6. Verify that the list of alternate HPs is generated based on Learn Cases relevant to the current study and context.
+
+
+7. Verify that the applied protocol reflects in the audit trail with timestamp and user ID.
+
+
+8. Verify that protocol selection remains stable during comparison addition/removal.
+
+
+9. Verify that protocol switching is blocked or warned if done mid-way through a reading session (depending on business rules).
+
+
+10. Verify that when no hanging protocols are available, the UI handles the empty state gracefully.
+
+
+
+
+---
+
+🟨 SSRS-301
+
+Requirement: “The front-end application shall provide a drop-down menu from the HP Learn button with each menu item labeled with HP name and context matching score.”
+
+
+---
+
+🔹 Test Cases for SSRS-301
+
+1. Verify that clicking the HP Learn button displays a dropdown with alternate hanging protocols.
+
+
+2. Verify that each entry in the dropdown shows the hanging protocol name.
+
+
+3. Verify that each hanging protocol is labeled with its context matching score.
+
+
+4. Verify that the dropdown list is sorted by descending match score.
+
+
+5. Verify that when no Learn Cases are available, the dropdown is either empty or hidden.
+
+
+6. Verify tooltip, hover state, or extended info is shown for long-named protocols.
+
+
+7. Verify that dropdown rendering adapts properly on small or ultra-wide screen sizes.
+
+
+8. Verify that the dropdown can be navigated via keyboard (up/down/enter).
+
+
+9. Verify that the dropdown closes when clicking outside the viewer frame or menu.
+
+
+10. Verify that the matching score shown is accurate and comes from the SRP engine logic.
+
+
+
+
+---
+
+🟨 SSRS-302
+
+Requirement: “Upon user selection of a specific menu item from the HP Learn button drop-down, the front-end application shall apply the selected Hanging Protocol.”
+
+
+---
+
+🔹 Test Cases for SSRS-302
+
+1. Verify that selecting a hanging protocol from the dropdown applies it immediately in the viewer.
+
+
+2. Verify that the selected protocol's layout, viewport mapping, and rendering parameters are reflected in the viewer state.
+
+
+3. Verify that applying a new HP replaces the previously applied HP completely.
+
+
+4. Verify that a loading spinner or message is shown while the selected HP is being applied.
+
+
+5. Verify that an error message is shown when applying a corrupted or unavailable HP.
+
+
+6. Verify that user selection of HP is recorded in logs or audit trail with user ID and timestamp.
+
+
+7. Verify that if the user re-selects the same HP, no redundant re-application occurs.
+
+
+8. Verify that the system can gracefully apply HP even if some referenced series are missing.
+
+
+9. Verify that each component of the selected HP (layout, sync tools, cross-ref) is respected in the UI after application.
+
+
+10. Verify fallback behavior when HP application partially fails (e.g., missing one series in layout).
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping (AC)
+
+AC Description	Covered In Test Cases
+
+User should be able to see all matching alternate HPs	SRO-72 TC 1, SSRS-301 TC 1, 2, 4
+User should see match score for context relevance	SSRS-301 TC 3, 10
+User must be able to select and apply a hanging protocol	SRO-72 TC 3, SSRS-302 TC 1, 2
+System must apply selected HP and update viewer layout	SSRS-302 TC 2, 3, 9
+Audit trail must reflect user protocol selection	SRO-72 TC 7, SSRS-302 TC 6
+Viewer must handle errors and unavailable/malformed HPs	SSRS-302 TC 5, 10
+Dropdown should be fully functional (keyboard, responsive, accessible)	SSRS-301 TC 7, 8, 9
+
+
+
+---
+
+Would you like the same level of detail for SRO-73 or 75 next, or convert these into a tabular format or Gherkin?
+
 
