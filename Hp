@@ -253,4 +253,160 @@ These focus on the actual fallback layout rendering behavior on the viewer side.
 Would you like me to generate these in a structured table or export them into a specific format (Excel test suite, Gherkin, JSON)?
 Or are we moving on to the next SRO/SSRS pair?
 
+‐---------------------
+Thanks, Apurva. Let's continue with SRO-69 and its related SSRS-282, 306, and 307. I’ve separated the test cases based on SRO and SSRS, and each scenario starts with "Verify" as you prefer.
+
+
+---
+
+✅ SRO-69
+
+Requirement: "The system shall allow user to save the current hanging state as a Learn Case."
+
+🔹 End-to-End Test Scenarios for SRO-69
+
+1. Verify that the system allows the user to trigger Learn Case saving from the viewer UI.
+
+
+2. Verify that the system persists all applied hanging parameters in the saved Learn Case.
+
+
+3. Verify that saving a Learn Case does not affect the ongoing study viewing session.
+
+
+4. Verify that the system shows a success message upon successful Learn Case saving.
+
+
+5. Verify that Learn Case saving fails gracefully if the backend service is down.
+
+
+6. Verify that Learn Case saving is disabled for unsupported modalities.
+
+
+7. Verify that Learn Case overwrites existing case if one already exists for the same user and context (if designed so).
+
+
+8. Verify that Learn Case is saved with proper metadata: timestamp, user ID, study UID, etc.
+
+
+9. Verify that saving is restricted when the user has read-only access.
+
+
+10. Verify that system logs capture Learn Case save event with proper audit information.
+
+
+
+
+---
+
+✅ SSRS-282
+
+Requirement: "Front end application shall provide a Learn button to save the current hanging protocol."
+
+🔹 Test Scenarios for SSRS-282
+
+1. Verify that the Learn button is visible when a hanging protocol is applied.
+
+
+2. Verify that clicking the Learn button initiates saving of current hanging parameters.
+
+
+3. Verify that Learn button is disabled if there is no active hanging protocol.
+
+
+4. Verify tooltip/help text is shown when hovering over the Learn button.
+
+
+5. Verify button responsiveness across different resolutions and screen modes.
+
+
+6. Verify that clicking Learn multiple times rapidly does not trigger duplicate saves.
+
+
+7. Verify Learn button behavior for different roles: Radiologist vs Technician.
+
+
+8. Verify UI feedback (e.g., spinner or success icon) after clicking Learn.
+
+
+9. Verify that Learn button is not rendered on mobile mode or unsupported browsers.
+
+
+
+
+---
+
+✅ SSRS-306
+
+Requirement: "The system shall display a message indicating the SRP Learn Case could not be saved."
+
+🔹 Test Scenarios for SSRS-306
+
+1. Verify that an error message is displayed when Learn Case save fails due to server error.
+
+
+2. Verify that message shows proper context like: “Save failed. Try again later.”
+
+
+3. Verify that the error message disappears after a timeout or user dismissal.
+
+
+4. Verify that no message is shown if save succeeds.
+
+
+5. Verify that repeated save failures do not stack multiple messages.
+
+
+6. Verify that localized error messages are shown in selected user language.
+
+
+7. Verify that error message appears when the internet connection is lost during saving.
+
+
+8. Verify that proper status code from API maps to meaningful user messages (e.g., 400, 500).
+
+
+
+
+---
+
+✅ SSRS-307
+
+Requirement: "The system shall wait for a response from the HP Service up to a configurable time threshold before applying a default hanging protocol."
+
+🔹 Test Scenarios for SSRS-307
+
+1. Verify that system waits for a Learn Case match response from HP service before applying HP.
+
+
+2. Verify that default HP is applied when no response is received within the configured timeout.
+
+
+3. Verify that the timeout is configurable from admin or config panel.
+
+
+4. Verify system logs the timeout event for HP fallback usage.
+
+
+5. Verify HP matching logic is skipped if default timeout is reached.
+
+
+6. Verify that increasing the timeout value delays fallback to default HP.
+
+
+7. Verify behavior when HP service sends partial or malformed response.
+
+
+8. Verify fallback mechanism does not apply if timeout is set to 0.
+
+
+9. Verify correct HP is applied if response is received just before timeout.
+
+
+
+
+---
+
+Let me know if you’d like the same format for another SRO next.
+
 
