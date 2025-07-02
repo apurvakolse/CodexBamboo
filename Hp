@@ -897,3 +897,214 @@ Or shall we proceed with SSRS-290 in this same deep format?
 
 Let’s keep the momentum going.
 
+---------------------290---------------
+Absolutely, Apurva. You’ve got it — I’ll now dissect SSRS-289 down to the finest implementation detail, just like a 10+ year automation test engineer would for a radiology imaging system like GenesisViewer.
+
+
+---
+
+🟨 SSRS-289 (Detailed Breakdown)
+
+Requirement: "The front-end application shall apply the display/rendering parameters as per the hanging protocol for each viewport."
+Applies To: GenesisViewer (HP Client)
+Parent SRO: SRO-74
+
+
+---
+
+🔍 Key Functional Components to Cover in Testing:
+
+Rendering Parameter	DICOM Tag(s) / Source	Notes
+
+WW/WL	(0028,1050) / (0028,1051)	Must apply per viewport per series
+Zoom & Pan	Internal viewer state (usually float/scalar values)	May vary by modality or protocol
+Orientation	(0020,0037) – Image Orientation Patient	Critical for anatomical alignment
+Shutters	(0018,1622)–(0018,1624) or Presentation State	Optional – should not break viewer
+VOI LUT / Presentation State	(0028,3010) / (0028,3110) etc.	DICOM-defined grayscale transforms
+Per-viewport mapping	Series UID or display group mapping	Must not cross-apply settings
+
+
+
+---
+
+✅ Test Cases – Organized by Parameter & Scenario
+
+Each starts with "Verify" and is grouped by what rendering logic is being tested.
+
+
+---
+
+🧪 A. WW/WL (Window Width / Window Level)
+
+1. Verify that the WW/WL values defined in the hanging protocol are applied to each viewport upon layout initialization.
+
+
+2. Verify that different WW/WL values are applied per viewport when different series are loaded.
+
+
+3. Verify that default WW/WL presets are used when HP does not define values.
+
+
+4. Verify that WW/WL values are overridden only when the user explicitly changes them.
+
+
+5. Verify that reapplying the same HP resets WW/WL to original values.
+
+
+6. Verify that WW/WL values persist through study reload when HP is reapplied.
+
+
+
+
+---
+
+🧪 B. Zoom & Pan
+
+7. Verify that zoom values defined in the HP are correctly applied to each viewport.
+
+
+8. Verify that pan (x/y offset) is correctly restored per viewport from the HP.
+
+
+9. Verify that zoom/pan settings are not applied globally unless the HP defines global sync.
+
+
+10. Verify correct scaling/centering behavior on high-DPI displays or ultrawide screens.
+
+
+11. Verify zoom behavior is modality-aware (e.g., disable for ultrasound if defined so).
+
+
+12. Verify fallback to default zoom when HP zoom parameters are invalid or missing.
+
+
+
+
+---
+
+🧪 C. Orientation
+
+13. Verify that image orientation (e.g., HFS, HFP) is applied as defined in the HP per viewport.
+
+
+14. Verify that each viewport respects its assigned orientation regardless of other viewports.
+
+
+15. Verify that flipping or rotating images based on orientation settings reflects in overlay.
+
+
+16. Verify viewer gracefully handles missing or malformed orientation tags.
+
+
+17. Verify that user override does not persist after HP is re-applied.
+
+
+
+
+---
+
+🧪 D. Shutters & VOI LUTs / Presentation State
+
+18. Verify that shutters are rendered in viewports when specified in the HP.
+
+
+19. Verify that VOI LUTs are applied per series if provided in the HP.
+
+
+20. Verify that missing or malformed LUTs result in safe fallback (grayscale default).
+
+
+21. Verify that overlapping shutters from DICOM Presentation State are ignored if HP disables them.
+
+
+22. Verify correct rendering when Presentation State is present but HP defines custom WW/WL.
+
+
+
+
+---
+
+🧪 E. Per-Viewport Isolation
+
+23. Verify that rendering settings in one viewport do not affect another.
+
+
+24. Verify that switching series in one viewport maintains its unique render settings.
+
+
+25. Verify that layout reset applies only the HP settings, not cached user overrides.
+
+
+
+
+---
+
+🧪 F. General/Meta Tests
+
+26. Verify that rendering parameters are applied in the correct order: layout → mapping → rendering.
+
+
+27. Verify that hanging protocol reapplication completely resets the viewport state.
+
+
+28. Verify that audit logs reflect which rendering parameters were applied per viewport.
+
+
+29. Verify that mismatched series types (e.g., one MPR and one 2D axial) still receive correct rendering.
+
+
+30. Verify consistent rendering behavior when switching between Learn Case and default HP.
+
+
+
+
+---
+
+⚠️ Edge Case Test Scenarios
+
+31. Verify that rendering applies correctly to multi-frame DICOM series.
+
+
+32. Verify rendering in stacked view mode where the same series spans multiple viewports.
+
+
+33. Verify correct behavior when images are compressed (e.g., JPEG2000, RLE).
+
+
+34. Verify behavior when SOPInstanceUID referenced in HP is not present in current study.
+
+
+35. Verify that rendering logic gracefully handles series of vastly different dimensions or matrix sizes.
+
+
+
+
+---
+
+✅ Acceptance Criteria (Mapped)
+
+Acceptance Criteria	Covered Test Cases
+
+Rendering parameters from HP must be applied to all viewports	1–6, 7–12, 13–17
+Each viewport must have isolated rendering behavior	23–25
+HP logic must handle missing/invalid rendering data gracefully	3, 6, 12, 16, 20, 34
+VOI LUTs, shutters, and orientation must not cause viewer instability	18–22, 29, 33
+Auditability and logging must trace rendering application	28
+Rendering order and layout interaction must be correct	26, 27
+Compatibility with compressed, multi-frame, and large image data	31–35
+
+
+
+---
+
+Would you like these converted into:
+
+Structured test case document (Excel/test suite)?
+
+Gherkin for automation?
+
+Or shall we proceed with SSRS-290 in this same deep format?
+
+
+Let’s keep the momentum going.
+
