@@ -1,4 +1,4 @@
-Absolutely, Apurva. Let’s bring your SRO-53 → SSRS-305 pair to full QA excellence using your Automation Test Engineer persona.
+⁶Absolutely, Apurva. Let’s bring your SRO-53 → SSRS-305 pair to full QA excellence using your Automation Test Engineer persona.
 
 
 ---
@@ -1563,4 +1563,189 @@ AC6	Edge conditions (race at boundary, offline mode) handled gracefully	23–28
 
 👍 Ready to convert these into Gherkin or automation code, or shall we tackle the next requirement?
 
+
+----------------------78------------------------
+Below are end-to-end test cases for SRO-78, followed by detailed front-end test scenarios for SSRS-286. Each scenario title begins with “Verify…”, and at the end you’ll find a mapping to the Acceptance Criteria (AC).
+
+
+---
+
+🟩 SRO-78
+
+> “The system shall include viewport layout, viewport-to-image-group mapping, and rendering parameters in the hanging protocol.”
+
+
+
+🔹 End-to-End Test Cases for SRO-78
+
+1. Verify that when a Learn Case is saved, its hanging-protocol definition includes a complete viewport-layout object
+
+Setup: Arrange a 2×2 layout across two monitors, then click “Learn.”
+
+Assert: The persisted HP JSON (or DB entry) contains layout.monitors, layout.rows, and layout.columns matching the UI.
+
+
+
+2. Verify that saving a Learn Case persists correct mapping of image display groups to each viewport
+
+Setup: Map an axial series to viewport1, a coronal to viewport2, etc., then save.
+
+Assert: The HP definition includes a mapping array with each groupId→viewportId pair.
+
+
+
+3. Verify that rendering parameters (viewType, WW/WL, RenderingMode, ThdRenderingMode, Rotate/Flip/Zoom) are stored in the HP
+
+Setup: In each viewport, set custom WW=400, WL=40; choose MIP for viewport1, VR for viewport2; rotate viewport3, zoom viewport4; then save.
+
+Assert: The HP payload contains for each viewport:
+
+{
+  "viewType":"Axial-MIP",
+  "windowWidth":400,
+  "windowLevel":40,
+  "renderingMode":"MIP",
+  "thdRenderingMode":"<value>",
+  "rotate":90,
+  "flip":true,
+  "zoom":1.5
+}
+
+
+
+4. Verify that global tool-enable states (GlobalStack, 3D Cursor, Cross Reference, Sync) are included in the HP definition
+
+Setup: Enable Sync & CrossRef, disable 3D Cursor & StackView, then save Learn Case.
+
+Assert: The HP JSON has:
+
+{
+  "tools":{
+    "sync":true,
+    "crossReference":true,
+    "threeDCursor":false,
+    "stackView":false
+  }
+}
+
+
+
+5. Verify that when an existing hanging-protocol is loaded (auto or manual), its layout, mapping, and rendering parameters reproduce the saved state
+
+Setup: Save a Learn Case as above, close and reopen the study.
+
+Assert: Viewer UI rebuilds the exact grid, assigns display groups, applies WW/WL, viewType, Rotate/Flip/Zoom, and tool flags as in the saved HP.
+
+
+
+6. Verify that if the HP Service returns a protocol lacking any of these sections (layout, mapping, or rendering), the client logs a warning and uses defaults for the missing parts
+
+Setup: Mock a service response missing renderingParameters for viewport3.
+
+Assert: Viewer applies layout & mapping, logs “Missing renderingParameters,” and uses default WW/WL and viewType for viewport3.
+
+
+
+
+
+---
+
+🟨 SSRS-286
+
+> **“Front end application shall provide the following information while saving hanging protocol as part of a Learn Case: • Layout of viewports in each monitor
+• Mapping of image display groups to viewports
+• Display/rendering parameters specific to viewports: – viewType (Native, Axial [Standard/MIP/MinIP/Average/VR], Sagittal, Coronal, 3D)
+– WindowWidth (WW) and WindowLevel (WL)
+– RenderingMode, ThdRenderingMode
+– Invert, Flip, Rotate
+• Information on application functions enabled/disabled per viewport (GlobalStack, 3D Cursor, Cross Reference, Sync)”
+
+
+
+🔹 Detailed Test Scenarios for SSRS-286
+
+A. Viewport Layout Capture
+
+1. Verify that the saved Learn Case payload includes layout objects for each monitor with correct row×column counts.
+
+
+2. Verify that multi-monitor layouts are each recorded under distinct layout.monitorId entries.
+
+
+3. Verify that invalid or missing layout in the client prevents the Learn Case save with a validation error.
+
+
+
+B. Display-Group → Viewport Mapping
+
+4. Verify that for every viewport the payload includes a mapping.displayGroupId → mapping.viewportId entry.
+
+
+5. Verify that attempting to save with no mappings (empty mapping array) is blocked by the UI with “Select at least one series” message.
+
+
+6. Verify that duplicate mappings (same group→two viewports) are flagged and prevented at save time.
+
+
+
+C. Rendering Parameters
+
+7. Verify that each viewport has a renderingParameters.viewType set to one of the supported values.
+
+
+8. Verify that windowWidth and windowLevel are numeric and within acceptable clinical ranges (e.g., WW>0).
+
+
+9. Verify that renderingParameters.renderingMode and thdRenderingMode match known enums, else validation fails.
+
+
+10. Verify that invert, flip, rotate, and zoom keys are all present (even if false/1×) in the payload.
+
+
+11. Verify that omitting zoom or rotate values defaults to zoom:1.0 and rotate:0 in the saved Learn Case.
+
+
+
+D. Tool-Enablement Flags
+
+12. Verify that the payload contains a tools object with boolean flags for globalStack, threeDCursor, crossReference, and sync.
+
+
+13. Verify that if the UI shows Sync off but the payload has sync:true, the save is rejected with mismatch error.
+
+
+14. Verify that saving with no tools object triggers a warning and defaults all tools to disabled.
+
+
+
+E. Payload Integrity & Validation
+
+15. Verify that the entire Learn Case JSON passes schema validation before submission.
+
+
+16. Verify that large layouts (e.g., 5×5) or unusual viewType combinations still produce a valid payload.
+
+
+17. Verify that malformed JSON (e.g., stray commas) is caught client-side and save is blocked.
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+AC #	Criterion	Covered By
+
+AC1	Payload must include full layout per monitor (rows, columns)	SRO-78 TC 1; SSRS-286 TC 1–3
+AC2	mapping array must correctly pair each image group to a viewport	SRO-78 TC 2; SSRS-286 TC 4–6
+AC3	renderingParameters (viewType, WW/WL, modes, rotate/flip/zoom) must appear for every viewport	SRO-78 TC 3; SSRS-286 TC 7–11
+AC4	tools flags (GlobalStack, 3D Cursor, CrossRef, Sync) must be included and reflect UI state	SRO-78 TC 4; SSRS-286 TC 12–14
+AC5	Missing or invalid sections in payload yield clear client-side validation errors or warnings	SRO-78 TC 6; SSRS-286 TC 3, 9, 14, 17
+
+
+
+---
+
+These cover every minute detail of SSRS-286, plus robust end-to-end checks for SRO-78.  Let me know if you’d like Gherkin or an automation stub next!
 
