@@ -143,4 +143,114 @@ Playwright automation code scaffold
 
 
 Or should we move to the next SRO/SSRS pair?
+Absolutely, Apurva! Here’s a clean separation of test cases:
+
+
+---
+
+🟩 SRO-53: “The system shall provide a set of default hanging protocols.”
+
+✅ End-to-End Test Scenarios for SRO-53
+
+These validate the system-level behavior of fallback hanging protocols being provided and applied when no user-learned or predefined layout is available.
+
+🔷 Positive
+
+1. Verify that the system applies the default 1x1 layout when no learned or user-defined hanging protocol is matched for a study
+
+
+2. Verify that the default layout configuration is stored and retrieved correctly from system settings or configuration service
+
+
+3. Verify that default HP is used when a new user with no preferences logs in and opens a study for the first time
+
+
+4. Verify that the system applies the default layout consistently across different modalities such as CT, MR, and US
+
+
+
+🔶 Negative
+
+5. Verify that the viewer does not crash when the default HP layout file is corrupted or malformed
+
+
+6. Verify that the viewer logs a warning or error if the default HP references a missing display group
+
+
+7. Verify that fallback layout is not applied if a user-selected protocol exists even if SRP fails
+
+
+
+⚠️ Edge
+
+8. Verify that fallback applies instantly if the SRP engine times out or is disabled in configuration
+
+
+9. Verify correct behavior when the system switches between online and offline mode (SRP service toggle)
+
+
+10. Verify that the viewer reverts to fallback layout when the previously saved Learn Case was deleted before viewer launch
+
+
+
+
+---
+
+🟨 SSRS-305: “The system shall display a 1x1 viewport grid on the primary monitor containing the first series from the primary study when no other layout definition is present.”
+
+✅ Functional Test Scenarios for SSRS-305
+
+These focus on the actual fallback layout rendering behavior on the viewer side.
+
+🔷 Positive
+
+1. Verify that the first available series from the primary study is displayed in the 1x1 viewport when no layout is defined
+
+
+2. Verify that the 1x1 layout is displayed on the primary monitor in a single-monitor setup
+
+
+3. Verify that the fallback layout is modality-agnostic and applies uniformly across supported modalities
+
+
+4. Verify that the fallback 1x1 layout does not interfere with subsequent manual layout overrides by the user
+
+
+
+🔶 Negative
+
+5. Verify that the system displays a message or fallback content when the primary study contains no valid image series
+
+
+6. Verify that an empty viewport is shown if the first series is not retrievable due to missing SOPInstanceUID or broken DICOM tags
+
+
+7. Verify that the fallback layout still loads if the monitor configuration metadata is missing or incorrect
+
+
+8. Verify that no other protocols (manual, learned) override the fallback 1x1 layout once it is applied
+
+
+
+⚠️ Edge
+
+9. Verify that when multiple series have the same Series Number, the viewer deterministically selects the first by acquisition time or SOPInstanceUID
+
+
+10. Verify that in dual-monitor setups, the fallback 1x1 layout still renders on the primary monitor, not arbitrarily
+
+
+11. Verify that the fallback 1x1 layout displays correctly on high-resolution or ultrawide monitors without distortion
+
+
+12. Verify that fallback 1x1 layout handles DICOM studies with non-standard compression (e.g., JPEG2000)
+
+
+
+
+---
+
+Would you like me to generate these in a structured table or export them into a specific format (Excel test suite, Gherkin, JSON)?
+Or are we moving on to the next SRO/SSRS pair?
+
 
