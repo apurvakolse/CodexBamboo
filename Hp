@@ -1,98 +1,62 @@
-Perfect, Apurva. Let’s work on this new pair:
+Absolutely, Apurva. Let’s bring your SRO-53 → SSRS-305 pair to full QA excellence using your Automation Test Engineer persona.
 
 
 ---
 
-🟩 System Requirement: SEGV-SRO-390
+🟩 System Requirement: SEGV-SRO-53
 
-> “The system shall auto-save the learn case when a hanging protocol is changed by the user before the reading begins.”
-
-
+> “The system shall provide a set of default hanging protocols.”
 
 
----
 
-🟨 Sub-System Requirement: SEGV-SSRS-304
+✅ Objective:
 
-> “The system shall trigger learn case save automatically if the hanging protocol is changed by the user before the reading starts.”
-
-
+Ensure the system provides fallback display logic (via default HPs) when no learned/user-defined HP is matched.
 
 
 ---
 
-✅ End-to-End Test Cases for SRO-390
+🟨 Sub-System Requirement: SEGV-SSRS-305
+
+> “The system shall display a 1x1 viewport grid on the primary monitor containing the first series from the primary study when no other layout definition is present.”
+
+
+
+✅ Objective:
+
+If no HP is matched, system falls back to showing the first series from the primary study in a 1x1 layout on the primary monitor.
 
 
 ---
 
-🧪 Test Case 1: Verify that the system auto-saves a learn case when the user modifies the hanging protocol before starting to read
+✅ All Descriptive Test Scenarios for SRO-53 & SSRS-305
 
-Step	Description
-
-1	Launch the viewer with a study
-2	Let the system apply an initial hanging protocol
-3	Before reading (e.g., before report opens or before measurement tools are used), user changes layout or mapping
-✅	Expected: System auto-triggers Learn Case save with the updated layout/rendering
-✅	Validation: New Learn Case is visible in the Learn Case DB and associated with the study context
-
-
-
----
-
-🧪 Test Case 2: Verify that auto-save does not trigger if user does not change the hanging protocol
-
-Step	Description
-
-1	Launch the viewer with a study and allow auto-applied HP
-2	Do not interact with layout/rendering or override anything
-3	Begin reading
-✅	Expected: No new Learn Case is saved
-✅	Validation: Learn Case DB remains unchanged
-
-
-
----
-
-🧪 Test Case 3: Verify that system avoids duplicate Learn Case saves if user makes repeated changes before reading
-
-Step	Description
-
-1	Launch viewer with a study and auto-applied HP
-2	Before reading, user toggles between layouts multiple times
-✅	Expected: System either saves only the final state or merges changes into a single Learn Case
-✅	Validation: Only one new Learn Case is persisted per session per study context
-
-
-
----
-
-🟨 Test Scenarios for SSRS-304
+(Written using “Verify…” format, with Positive, Negative, and Edge scenarios—fully grounded in UI, backend, DICOM, and workflow behavior)
 
 
 ---
 
 ✅ Positive Test Scenarios
 
-1. Verify that the system triggers Learn Case save automatically when the user changes the layout before reading
+1. Verify that the system applies the default 1x1 layout when no learned or user-defined hanging protocol is matched for a study
 
 
-2. Verify that changes to rendering parameters (zoom, WW/WL, orientation) before reading trigger Learn Case auto-save
+2. Verify that the first available series from the primary study is displayed in the 1x1 viewport when no layout is defined
 
 
-3. Verify that display group reordering or viewport remapping before reading also results in a Learn Case save
+3. Verify that the fallback 1x1 layout appears specifically on the primary monitor in single-monitor configurations
 
 
-4. Verify that Learn Case save is triggered only once per modification session even if multiple changes are made rapidly
+4. Verify that the system applies the fallback default layout consistently across modalities such as CT, MR, and US
 
 
-5. Verify that the Learn Case saved contains both layout and rendering changes as part of the metadata
+5. Verify that the system applies the default layout even when the study contains multiple series without a matched HP
 
 
-6. Verify that the auto-saved Learn Case is marked as system-triggered in the audit/logs
+6. Verify that the default layout configuration is stored and retrieved correctly from system settings or configuration service
 
 
-7. Verify that Learn Case is saved with correct timestamp and study context (StudyInstanceUID, Modality, etc.)
+7. Verify that default HP is used when a new user with no preferences logs in and opens a study for the first time
 
 
 
@@ -101,19 +65,22 @@ Step	Description
 
 ❌ Negative Test Scenarios
 
-8. Verify that no Learn Case is saved if the viewer is closed before any changes are made
+8. Verify that the system displays a message or fallback content when the primary study contains no valid image series
 
 
-9. Verify that no Learn Case is saved if layout is modified after the reading has begun (i.e., post-report start)
+9. Verify that the system does not crash when the default HP layout file is corrupted or malformed
 
 
-10. Verify that Learn Case is not saved if the viewer crashes or loses connection before the save call completes
+10. Verify that an empty viewport is shown if the first series is not retrievable due to missing SOPInstanceUID or broken DICOM tags
 
 
-11. Verify that incomplete rendering changes (e.g., WW/WL changed but not confirmed) do not trigger auto-save
+11. Verify that the fallback layout still loads if the monitor configuration metadata is missing or incorrect
 
 
-12. Verify that auto-save fails gracefully and logs an error if the Learn Case DB is unavailable
+12. Verify that the viewer logs a warning or error if the default HP references a missing display group
+
+
+13. Verify that no other protocols (manual, learned) override the fallback 1x1 layout once it's applied
 
 
 
@@ -122,47 +89,58 @@ Step	Description
 
 ⚠️ Edge Test Scenarios
 
-13. Verify auto-save behavior when the same user opens the study multiple times and makes different changes before reading
+14. Verify that when multiple series have the same Series Number, the viewer deterministically selects the first by acquisition time or SOPInstanceUID
 
 
-14. Verify that a new Learn Case is saved if a different user modifies the HP on the same study before reading
+15. Verify that in dual-monitor setups, the fallback 1x1 layout still renders on the primary monitor, not arbitrarily
 
 
-15. Verify that the system handles auto-save correctly in multi-tab or multi-monitor viewer sessions
+16. Verify that the fallback 1x1 layout appears even when the study has partial metadata or non-standard compression (e.g., JPEG2000)
 
 
-16. Verify that auto-save is skipped or delayed if system resources are critically low (CPU, memory, disk)
+17. Verify that fallback 1x1 layout displays correctly on high-resolution or ultrawide monitors without stretching or misalignment
 
 
-17. Verify that multiple users editing the same study do not cause race conditions or duplicate Learn Cases
+18. Verify that fallback applies instantly if the SRP engine times out or is disabled in configuration
 
 
+19. Verify that fallback layout is not applied if a user-selected protocol exists even if SRP fails
 
 
----
+20. Verify correct behavior when the system switches between online and offline mode (SRP service toggle)
 
-🧠 Technical Insight:
 
-Trigger Point: HP modification event before ReadingStartTime (which may be marked by first diagnostic interaction or report launch)
+21. Verify that the viewer reverts to fallback layout when the previously saved Learn Case was deleted before viewer launch
 
-Metadata Saved: Layout config, rendering params, user ID, timestamp, study context
-
-Storage: Learn Case DB (likely a NoSQL or structured document store)
-
-Monitoring: UI events like layout change, drag-drop, rendering adjustment must be hooked
 
 
 
 ---
 
-Would you like these now in:
+✅ Relevant Acceptance Criteria (AC) Mapped to Test Scenarios
 
-Gherkin format?
+Acceptance Criteria	Covered By Test Cases
 
-Detailed manual test cases (Test Steps, Test Data, Expected)?
+AC1: Default HP must apply when no other protocol is available	1, 2, 6, 7
+AC2: Fallback layout must be 1x1	1, 3, 4, 5, 14
+AC3: First series of primary study must be shown	2, 8, 10, 14
+AC4: Must not crash or degrade in corrupted/missing config	9, 10, 11, 12
+AC5: Must apply on primary monitor	3, 15
+AC6: Must support edge devices and dual-screen scenarios	15, 17
+AC7: System must distinguish between fallback vs matched protocol state	13, 19, 21
 
-Playwright automation scaffolding?
 
 
-Or ready for the next SRO-SSRS pair?
+---
+
+Would you like these transformed into:
+
+Gherkin-style feature file
+
+Manual test case table (with steps + expected)
+
+Playwright automation code scaffold
+
+
+Or should we move to the next SRO/SSRS pair?
 
