@@ -898,213 +898,155 @@ Or shall we proceed with SSRS-290 in this same deep format?
 Let’s keep the momentum going.
 
 ---------------------290---------------
-Absolutely, Apurva. You’ve got it — I’ll now dissect SSRS-289 down to the finest implementation detail, just like a 10+ year automation test engineer would for a radiology imaging system like GenesisViewer.
+Here’s the minute-level breakdown and full set of “Verify…” test scenarios for SSRS-290, organized by each global function. I’ve also included the relevant acceptance criteria mapping at the end.
 
 
 ---
 
-🟨 SSRS-289 (Detailed Breakdown)
+🟨 SSRS-290
 
-Requirement: "The front-end application shall apply the display/rendering parameters as per the hanging protocol for each viewport."
-Applies To: GenesisViewer (HP Client)
+Requirement:
+“The front-end application shall enable/disable the global application functions like Sync, 3D Cursor, Cross Ref, Stack View for each viewport based on the hanging protocol.”
+
 Parent SRO: SRO-74
+Impact: HP Client (GenesisViewer front-end)
 
 
 ---
 
-🔍 Key Functional Components to Cover in Testing:
+🔍 Key Functions & Implementation Notes
 
-Rendering Parameter	DICOM Tag(s) / Source	Notes
+Function	Description	UI Element / State Source
 
-WW/WL	(0028,1050) / (0028,1051)	Must apply per viewport per series
-Zoom & Pan	Internal viewer state (usually float/scalar values)	May vary by modality or protocol
-Orientation	(0020,0037) – Image Orientation Patient	Critical for anatomical alignment
-Shutters	(0018,1622)–(0018,1624) or Presentation State	Optional – should not break viewer
-VOI LUT / Presentation State	(0028,3010) / (0028,3110) etc.	DICOM-defined grayscale transforms
-Per-viewport mapping	Series UID or display group mapping	Must not cross-apply settings
-
-
-
----
-
-✅ Test Cases – Organized by Parameter & Scenario
-
-Each starts with "Verify" and is grouped by what rendering logic is being tested.
-
-
----
-
-🧪 A. WW/WL (Window Width / Window Level)
-
-1. Verify that the WW/WL values defined in the hanging protocol are applied to each viewport upon layout initialization.
-
-
-2. Verify that different WW/WL values are applied per viewport when different series are loaded.
-
-
-3. Verify that default WW/WL presets are used when HP does not define values.
-
-
-4. Verify that WW/WL values are overridden only when the user explicitly changes them.
-
-
-5. Verify that reapplying the same HP resets WW/WL to original values.
-
-
-6. Verify that WW/WL values persist through study reload when HP is reapplied.
-
+Sync	Synchronizes scrolling/zooming/panning across viewports	Toggle button; internal sync flag
+3D Cursor	Shows/hides 3D cursor crosshair and ROI tracking across series	Cursor icon; 3D cursor state
+Cross Ref	Cross-reference lines between viewports to correlate anatomy	Overlay lines; cross-ref flag
+Stack View	Enables cine/stack playback mode for multi-frame series	Stack/play button; stack mode state
 
 
 
 ---
 
-🧪 B. Zoom & Pan
+✅ Detailed Test Scenarios
 
-7. Verify that zoom values defined in the HP are correctly applied to each viewport.
+A. Sync
 
-
-8. Verify that pan (x/y offset) is correctly restored per viewport from the HP.
-
-
-9. Verify that zoom/pan settings are not applied globally unless the HP defines global sync.
+1. Verify that Sync is enabled in all viewports when the hanging protocol defines synchronization
 
 
-10. Verify correct scaling/centering behavior on high-DPI displays or ultrawide screens.
+2. Verify that all synchronized viewports scroll together when the user scrolls one viewport
 
 
-11. Verify zoom behavior is modality-aware (e.g., disable for ultrasound if defined so).
+3. Verify that zooming in one viewport zooms all synced viewports by the same factor
 
 
-12. Verify fallback to default zoom when HP zoom parameters are invalid or missing.
+4. Verify that pan operations in one viewport pan all synced viewports equally
 
+
+5. Verify that Sync toggle in the toolbar reflects the HP setting (on/off) upon HP application
+
+
+6. Verify that disabling Sync in the HP results in independent scrolling/zoom behavior per viewport
+
+
+
+Negative & Edge
+7. Verify that Sync does not activate if there is only one viewport
+8. Verify that Sync toggling while cine play is active does not crash the viewer
+9. Verify that partial sync (e.g., only zoom synced) is applied if the HP specifies sub-feature granularity
+10. Verify that sync state persists through layout re-applications but resets when a different HP is chosen
+
+
+---
+
+B. 3D Cursor
+
+11. Verify that the 3D Cursor is visible in viewports when enabled by the hanging protocol
+
+
+12. Verify that moving the cursor in one viewport updates the cursor position in all linked 3D viewports
+
+
+13. Verify that the 3D Cursor toggle reflects the HP definition immediately after HP is applied
+
+
+14. Verify that disabling the 3D Cursor in the HP hides the cursor overlay in all viewports
+
+
+
+Negative & Edge
+15. Verify that 3D Cursor operations do not throw exceptions when applied to single-slice series
+16. Verify that the cursor update logic handles missing slice positions gracefully (e.g., gaps in Z-axis)
+17. Verify that enabling 3D Cursor on a non-volume series (e.g., CR) has no effect and shows no errors
+18. Verify that rapid toggling of 3D Cursor does not lead to state desynchronization between viewports
+
+
+---
+
+C. Cross Ref
+
+19. Verify that Cross-Reference lines appear across viewports when enabled by the hanging protocol
+
+
+20. Verify that moving the reference line in one viewport updates the corresponding lines in all others
+
+
+21. Verify that the Cross Ref toggle state matches the HP definition upon HP load
+
+
+22. Verify that disabling Cross Ref removes all overlay lines immediately
+
+
+
+Negative & Edge
+23. Verify that Cross Ref does not apply on modalities that lack spatial correlation (e.g., US)
+24. Verify that malformed line coordinates in the HP do not crash the viewer but fall back silently
+25. Verify that Cross Ref functionality survives viewport reordering or layout changes mid-session
+
+
+---
+
+D. Stack View (Cine Mode)
+
+26. Verify that Stack View (cine playback controls) is enabled when the HP definition includes it
+
+
+27. Verify that cine playback plays frames in all viewports simultaneously when synced by HP
+
+
+28. Verify that the Stack View toggle state in the UI matches the HP setting after HP application
+
+
+29. Verify that disabling Stack View in the HP disables all cine controls and stops any playback
+
+
+
+Negative & Edge
+30. Verify that Stack View on a single-frame series does nothing and shows a warning if defined
+31. Verify that rapidly toggling Stack View during playback does not freeze or corrupt the viewer state
+32. Verify that playback speed settings revert to defaults if HP specifies unsupported speeds
+33. Verify that Stack View can be applied independently per viewport if HP defines partial stack sync
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+Acceptance Criterion	Covered By Test Cases
+
+AC1: Each global function must reflect HP-defined enable/disable state on load	1, 6, 13, 14, 21, 22, 28, 29
+AC2: Synchronized operations must behave correctly when Sync is enabled	2, 3, 4
+AC3: 3D Cursor must update across viewports when enabled	12
+AC4: Cross Ref lines must track anatomy positions correctly	20
+AC5: Stack View must allow simultaneous cine playback when enabled	27
+AC6: Functions must be isolated (i.e., disabling one does not affect others)	6, 14, 22, 29
+AC7: System handles invalid or unsupported function definitions gracefully	7, 15, 23, 24, 30
+AC8: Toggling functions rapidly or mid-playback must not crash or desynchronize viewer	8, 18, 31
+AC9: Function state persists correctly across HP re-applications	10, 17, 33
 
 
 
 ---
 
-🧪 C. Orientation
-
-13. Verify that image orientation (e.g., HFS, HFP) is applied as defined in the HP per viewport.
-
-
-14. Verify that each viewport respects its assigned orientation regardless of other viewports.
-
-
-15. Verify that flipping or rotating images based on orientation settings reflects in overlay.
-
-
-16. Verify viewer gracefully handles missing or malformed orientation tags.
-
-
-17. Verify that user override does not persist after HP is re-applied.
-
-
-
-
----
-
-🧪 D. Shutters & VOI LUTs / Presentation State
-
-18. Verify that shutters are rendered in viewports when specified in the HP.
-
-
-19. Verify that VOI LUTs are applied per series if provided in the HP.
-
-
-20. Verify that missing or malformed LUTs result in safe fallback (grayscale default).
-
-
-21. Verify that overlapping shutters from DICOM Presentation State are ignored if HP disables them.
-
-
-22. Verify correct rendering when Presentation State is present but HP defines custom WW/WL.
-
-
-
-
----
-
-🧪 E. Per-Viewport Isolation
-
-23. Verify that rendering settings in one viewport do not affect another.
-
-
-24. Verify that switching series in one viewport maintains its unique render settings.
-
-
-25. Verify that layout reset applies only the HP settings, not cached user overrides.
-
-
-
-
----
-
-🧪 F. General/Meta Tests
-
-26. Verify that rendering parameters are applied in the correct order: layout → mapping → rendering.
-
-
-27. Verify that hanging protocol reapplication completely resets the viewport state.
-
-
-28. Verify that audit logs reflect which rendering parameters were applied per viewport.
-
-
-29. Verify that mismatched series types (e.g., one MPR and one 2D axial) still receive correct rendering.
-
-
-30. Verify consistent rendering behavior when switching between Learn Case and default HP.
-
-
-
-
----
-
-⚠️ Edge Case Test Scenarios
-
-31. Verify that rendering applies correctly to multi-frame DICOM series.
-
-
-32. Verify rendering in stacked view mode where the same series spans multiple viewports.
-
-
-33. Verify correct behavior when images are compressed (e.g., JPEG2000, RLE).
-
-
-34. Verify behavior when SOPInstanceUID referenced in HP is not present in current study.
-
-
-35. Verify that rendering logic gracefully handles series of vastly different dimensions or matrix sizes.
-
-
-
-
----
-
-✅ Acceptance Criteria (Mapped)
-
-Acceptance Criteria	Covered Test Cases
-
-Rendering parameters from HP must be applied to all viewports	1–6, 7–12, 13–17
-Each viewport must have isolated rendering behavior	23–25
-HP logic must handle missing/invalid rendering data gracefully	3, 6, 12, 16, 20, 34
-VOI LUTs, shutters, and orientation must not cause viewer instability	18–22, 29, 33
-Auditability and logging must trace rendering application	28
-Rendering order and layout interaction must be correct	26, 27
-Compatibility with compressed, multi-frame, and large image data	31–35
-
-
-
----
-
-Would you like these converted into:
-
-Structured test case document (Excel/test suite)?
-
-Gherkin for automation?
-
-Or shall we proceed with SSRS-290 in this same deep format?
-
-
-Let’s keep the momentum going.
+Let me know if you’d like these spun into a Gherkin feature file, manual test case tables, or automation scaffolds next!
 
