@@ -1401,4 +1401,166 @@ I can lay these out in a spreadsheet or Gherkin feature file.
 
 Or we can jump to SSRS-307 or the next SRO you have. Let me know!
 
+--------------------------307--------------------------
+
+Below is the minute-detail breakdown for SSRS-307, with every test scenario starting with “Verify…”, organized by functional aspect, followed by Acceptance Criteria mapping.
+
+
+---
+
+🟨 SSRS-307
+
+Requirement:
+
+> “The system shall wait for a response from the HP Service up to a configurable time threshold before applying a default hanging protocol.”
+
+
+
+Parent SRO: SRO-76
+Impact: HP Client (GenesisViewer front-end)
+
+
+---
+
+🔍 Key Functional Aspects
+
+Aspect	Description
+
+Timeout Threshold	Configurable interval (ms or s) the client will wait for HP Service response
+Service Response	Success payload (HP definition) or failure (error, malformed data, no response)
+Fallback Protocol	Default hanging protocol applied after timeout or on service failure
+Logging & Metrics	Client-side audit of wait duration, fallback event, and service response
+Reactivity	How the viewer UI shows waiting state (spinner), then switches to default HP on timeout
+
+
+
+---
+
+✅ Detailed Test Scenarios
+
+A. Configurable Timeout Behavior
+
+1. Verify that the client reads the HP service timeout value from configuration on startup.
+
+
+2. Verify that increasing the timeout value (e.g., from 3s to 10s) delays fallback proportionally.
+
+
+3. Verify that setting timeout to zero results in immediate fallback without invoking service call.
+
+
+4. Verify that invalid timeout values (negative, non-numeric) revert to a safe default (e.g., 3s).
+
+
+5. Verify that changes to timeout in an admin panel take effect on the next viewer launch.
+
+
+
+B. Successful Service Response Before Timeout
+
+6. Verify that if the HP Service returns a valid HP definition within the timeout, that HP is applied.
+
+
+7. Verify that the client stops the timeout countdown immediately on receiving a valid response.
+
+
+8. Verify that no fallback HP is applied if a valid response arrives even 1ms before timeout.
+
+
+9. Verify that the UI removes any loading spinner once a response is processed.
+
+
+
+C. Service Failure or No Response (Timeout Fallback)
+
+10. Verify that if the HP Service does not respond within the timeout, the default HP is applied automatically.
+
+
+11. Verify that a request error (HTTP 500) triggers immediate fallback, ignoring remaining time.
+
+
+12. Verify that a malformed or partially invalid response (invalid JSON) triggers fallback.
+
+
+13. Verify that network disconnects or timeouts at the HTTP layer still result in fallback.
+
+
+14. Verify that the fallback HP used matches the configured default (e.g., 1×1 grid).
+
+
+
+D. Logging & Audit
+
+15. Verify that the client logs the actual wait duration and timestamp when fallback occurs.
+
+
+16. Verify that the log entry includes the reason (timeout vs. error vs. malformed response).
+
+
+17. Verify that successful service responses are logged with response time metrics.
+
+
+18. Verify that logs do not contain sensitive patient data—only protocol IDs and timestamps.
+
+
+
+E. UI Feedback & User Experience
+
+19. Verify that a visual loading indicator (spinner or status message) is shown while waiting.
+
+
+20. Verify that the loading indicator disappears and default HP renders immediately after timeout.
+
+
+21. Verify that switching away from the study before timeout cancels the wait and no fallback occurs.
+
+
+22. Verify that multiple rapid launches (open/close) do not queue multiple timeouts or fallbacks.
+
+
+
+
+---
+
+⚠️ Edge Test Scenarios
+
+23. Verify behavior when service responds precisely at the timeout boundary (race condition).
+
+
+24. Verify that very large timeout values (e.g., 1 hour) do not block UI permanently.
+
+
+25. Verify that mid-session HP re-applications also respect the timeout logic.
+
+
+26. Verify that fallback logic works correctly in offline mode (no network).
+
+
+27. Verify that partial responses (e.g., missing required HP fields) are treated as failures.
+
+
+28. Verify that toggling timeout config at runtime (if supported) does not break current wait.
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+AC #	Description	Covered By
+
+AC1	Client waits up to the configured timeout before fallback	A1–A4, A5
+AC2	Valid service response within timeout must apply HP, not fallback	B6–B9
+AC3	Fallback HP applied on service error or no response	C10–C14
+AC4	Logging of wait duration, reason, and HP IDs without patient data	D15–D18
+AC5	UI feedback visible during wait and removed on response or fallback	E19–E22
+AC6	Edge conditions (race at boundary, offline mode) handled gracefully	23–28
+
+
+
+---
+
+👍 Ready to convert these into Gherkin or automation code, or shall we tackle the next requirement?
+
 
