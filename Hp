@@ -566,4 +566,124 @@ Dropdown should be fully functional (keyboard, responsive, accessible)	SSRS-301 
 
 Would you like the same level of detail for SRO-73 or 75 next, or convert these into a tabular format or Gherkin?
 
+-------------------73----------------
+
+Certainly, Apurva! Here's the detailed breakdown for:
+
+
+---
+
+🟩 SRO-73
+
+Requirement:
+“The system shall support the selection of comparison studies as part of hanging protocol application.”
+
+
+---
+
+✅ End-to-End Test Scenarios for SRO-73
+
+1. Verify that the system allows the user to select one or more comparison studies during hanging protocol application.
+
+
+2. Verify that the selected comparison studies are included in the context used for hanging protocol matching.
+
+
+3. Verify that the viewer correctly displays both current and selected comparison studies after HP is applied.
+
+
+4. Verify that Learn Case selection and scoring include the selected comparison studies in context matching.
+
+
+5. Verify that removing a comparison study re-evaluates the hanging protocol if supported by the system design.
+
+
+6. Verify that HPs with embedded comparison logic behave correctly when comparisons are added manually.
+
+
+7. Verify that system audit logs include which comparison studies were selected when applying the HP.
+
+
+8. Verify fallback behavior when comparison studies are not available or cannot be loaded.
+
+
+
+
+---
+
+🟨 SSRS-303
+
+Requirement:
+“The front-end application shall include comparison studies as part of the study context in the hanging protocol.”
+
+
+---
+
+🔹 Test Cases for SSRS-303
+
+✅ Positive Scenarios
+
+1. Verify that the viewer includes selected comparison studies as part of the hanging protocol matching context.
+
+
+2. Verify that comparison studies are displayed in the designated comparison viewports as per the hanging protocol definition.
+
+
+3. Verify that the HP engine re-evaluates and ranks Learn Cases based on the comparison study’s context match.
+
+
+4. Verify that when two Learn Cases differ only by comparison study presence, the better match is selected.
+
+
+5. Verify that multiple comparison studies can be selected and included in the Learn Case context.
+
+
+
+❌ Negative Scenarios
+
+6. Verify that an error is displayed if a selected comparison study is corrupt or fails to load.
+
+
+7. Verify that the system skips unusable comparison studies during protocol application.
+
+
+8. Verify that mismatched modality comparison studies do not break the layout or matching logic.
+
+
+
+⚠️ Edge Scenarios
+
+9. Verify that if comparison studies are added after HP is applied, the viewer doesn’t reapply HP unless triggered.
+
+
+10. Verify that selecting a comparison study with only non-diagnostic images does not interfere with HP layout.
+
+
+11. Verify that the HP service still functions when a mix of DICOM-compliant and non-compliant comparison studies is used.
+
+
+12. Verify that comparison study metadata (e.g., StudyDate, Modality, StudyUID) is passed correctly in the API call for HP selection.
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+Acceptance Criteria	Covered Test Cases
+
+HP context should include selected comparison studies	SRO-73 TC 2, SSRS-303 TC 1, 3, 12
+Viewer should render comparison studies alongside current study	SRO-73 TC 3, SSRS-303 TC 2
+Matching should prioritize Learn Cases with better comparison context match	SRO-73 TC 4, SSRS-303 TC 4
+Comparison studies should not cause errors or break layout	SRO-73 TC 8, SSRS-303 TC 6, 7, 8
+System should handle multi-comparison gracefully	SSRS-303 TC 5, 9, 10, 11
+Proper logging and metadata passing required	SRO-73 TC 7, SSRS-303 TC 12
+
+
+
+---
+
+Let me know if you'd like this batch exported in test case table format, or if you’re ready to proceed to SRO-75 or another next pair.
+
 
