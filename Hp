@@ -1749,3 +1749,355 @@ AC5	Missing or invalid sections in payload yield clear client-side validation er
 
 These cover every minute detail of SSRS-286, plus robust end-to-end checks for SRO-78.  Let me know if you’d like Gherkin or an automation stub next!
 
+Below is a comprehensive suite of “Verify…” test cases that drill into every minute requirement of SSRS-286, grouped by its four subsections. At the end you’ll find a mapping back to the key acceptance criteria.
+
+
+---
+
+SSRS-286
+
+> Front end application shall provide the following information while saving hanging protocol as part of a Learn Case:
+
+1. Viewport Layout
+
+
+2. Image-Display-Group → Viewport Mapping
+
+
+3. Display/Rendering Parameters
+
+
+4. Application-Function Flags
+
+
+
+
+
+
+---
+
+A. Viewport Layout Capture
+
+1. Verify that the Learn-Case payload includes a layout object for each connected monitor.
+
+
+2. Verify that each monitor’s layout.rows and layout.columns match the on-screen grid.
+
+
+3. Verify that layout.monitorId correctly identifies primary vs. secondary monitors.
+
+
+4. Verify that swapping monitors (OS-level) before saving updates monitorId in the payload.
+
+
+5. Verify that a custom asymmetric grid (e.g. 1×3) is captured verbatim in layout.
+
+
+6. Verify that invalid grid configurations (e.g. 0 rows) block the save with an error.
+
+
+
+
+---
+
+B. Image-Display-Group → Viewport Mapping
+
+7. Verify that every viewport entry in the payload has a corresponding mapping.displayGroupId key.
+
+
+8. Verify that each displayGroupId maps exactly to its intended viewportId.
+
+
+9. Verify that attempting to save with an unmapped viewport prompts “Select a series for all viewports.”
+
+
+10. Verify that duplicate mappings (same group → two viewports) are rejected client-side.
+
+
+11. Verify that mapping uses the DICOM SeriesInstanceUID, not just series number, in the payload.
+
+
+12. Verify that changing series in a viewport immediately updates the pending payload mapping.
+
+
+
+
+---
+
+C. Display/Rendering Parameters
+
+C1. viewType
+
+13. Verify that the payload’s renderingParameters.viewType exactly matches the UI-selected type per viewport.
+
+
+14. Verify that all supported viewTypes (Native, Axial-MIP, Sagittal-VR, etc.) are serializable.
+
+
+15. Verify that an unsupported viewType in the UI is disallowed before payload creation.
+
+
+
+C2. Window Width & Level
+
+16. Verify that renderingParameters.windowWidth and windowLevel reflect the last user setting in the viewport.
+
+
+17. Verify that negative or zero WW/WL values are normalized or blocked by client validation.
+
+
+18. Verify that very large WW/WL (e.g. >65k) are clamped to the viewer’s max allowable range.
+
+
+
+C3. RenderingMode & ThdRenderingMode
+
+19. Verify that renderingParameters.renderingMode matches the dropdown (e.g., “Standard”, “VR”).
+
+
+20. Verify that renderingParameters.thdRenderingMode is present when RenderingMode requires thresholding.
+
+
+21. Verify that missing thdRenderingMode when needed produces a client-side alert.
+
+
+22. Verify that unsupported renderingMode values are replaced with “Standard” before save.
+
+
+
+C4. Invert / Flip / Rotate / Zoom
+
+23. Verify that renderingParameters.invert and flip flags are true/false as per viewport state.
+
+
+24. Verify that renderingParameters.rotate (0/90/180/270) matches the UI rotate control.
+
+
+25. Verify that renderingParameters.zoom decimal matches the zoom slider’s value.
+
+
+26. Verify that these parameters appear only for viewType=Native, and are omitted otherwise.
+
+
+27. Verify that missing zoom/rotate keys default to zoom:1.0 and rotate:0 in the payload.
+
+
+
+
+---
+
+D. Application-Function Flags
+
+28. Verify that the payload includes a tools.sync boolean reflecting Sync’s UI toggle.
+
+
+29. Verify that the payload includes tools.crossReference per the CrossRef button state.
+
+
+30. Verify that tools.threeDCursor matches the 3D-cursor icon’s enabled/disabled state.
+
+
+31. Verify that tools.globalStack matches the cine/stack-view control’s state.
+
+
+32. Verify that if a flag is missing from the HP payload, the client warns “Tool flags incomplete.”
+
+
+33. Verify that saving with all four flags toggled on produces {"sync":true,…} for each.
+
+
+
+
+---
+
+E. Payload Structure & Validation
+
+34. Verify that the final JSON object matches the Learn-Case schema (passes JSON schema validation).
+
+
+35. Verify that rpc/REST call submits the complete layout + mapping + rendering + tools in one payload.
+
+
+36. Verify that a malformed JSON payload is caught client-side and blocks the network call.
+
+
+37. Verify that saving during an active hanging-protocol switch cancels the previous payload build.
+
+
+38. Verify that very large payloads (e.g., 16 viewports) do not exceed payload size limits.
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+AC	Test Cases
+
+AC1: Full layout captured	1–6
+AC2: All mappings present	7–12
+AC3: Rendering params	13–27
+AC4: Tool flags included	28–33
+AC5: Payload validity	34–38
+
+
+
+---
+
+These 38 “Verify…” scenarios cover every line of SSRS-286’s requirement. Let me know if you’d like to see them in Gherkin or as a spreadsheet export next!
+
+----------------------------309---------------
+Here are the “Verify…” test cases for SRO-390 (end-to-end) and SSRS-304 (minute-detail), clearly separated, with acceptance-criteria mapping at the end.
+
+
+---
+
+🟩 SRO-390
+
+> “The system shall auto-save the learn case when a hanging protocol is changed by the user before the reading begins.”
+
+
+
+🔹 End-to-End Test Scenarios for SRO-390
+
+1. Verify that changing the hanging protocol layout before reading starts triggers an automatic Learn-Case save.
+
+
+2. Verify that adjusting any rendering parameter (WW/WL, zoom, pan, rotate, flip) prior to reading triggers an automatic Learn-Case save.
+
+
+3. Verify that toggling any global tool flag (Sync, Cross-Ref, 3D Cursor, Stack View) before reading triggers an automatic Learn-Case save.
+
+
+4. Verify that no auto-save occurs if the user makes no changes before initiating reading.
+
+
+5. Verify that changes made after reading has begun do not trigger an automatic Learn-Case save.
+
+
+6. Verify that only a single auto-save occurs for a burst of rapid protocol changes prior to reading.
+
+
+7. Verify that the auto-save payload contains the complete hanging-protocol state (layout, mapping, rendering, tools) plus metadata (userID, timestamp, studyUID).
+
+
+8. Verify that an audit log entry is created when an auto-save occurs, capturing protocol ID and change details.
+
+
+
+
+---
+
+🟨 SSRS-304
+
+> “The system shall trigger learn-case save automatically if the hanging protocol is changed by the user before the reading starts.”
+
+
+
+A. Layout Change Detection
+
+1. Verify that adding or removing viewports (e.g., switching from 2×2 to 1×3) triggers an auto-save before reading.
+
+
+2. Verify that swapping two viewports (reordering series mapping) triggers an auto-save before reading.
+
+
+3. Verify that drag-dropping a new series into any viewport triggers an auto-save before reading.
+
+
+
+B. Rendering Parameter Change
+
+4. Verify that modifying WindowWidth or WindowLevel triggers an auto-save before reading.
+
+
+5. Verify that adjusting Zoom or Pan in any viewport triggers an auto-save before reading.
+
+
+6. Verify that rotating or flipping the image in any viewport triggers an auto-save before reading.
+
+
+7. Verify that changing the RenderingMode or ThdRenderingMode triggers an auto-save before reading.
+
+
+
+C. Global Tool-Flag Change
+
+8. Verify that toggling Sync on/off triggers an auto-save before reading.
+
+
+9. Verify that toggling Cross-Reference on/off triggers an auto-save before reading.
+
+
+10. Verify that toggling the 3D Cursor on/off triggers an auto-save before reading.
+
+
+11. Verify that toggling Stack View on/off triggers an auto-save before reading.
+
+
+
+D. Timing & Frequency
+
+12. Verify that no auto-save occurs if no protocol changes happen before reading start.
+
+
+13. Verify that changes made after reading has started do not trigger an auto-save.
+
+
+14. Verify that multiple rapid changes within 1 second result in only one auto-save (debounce).
+
+
+15. Verify that simultaneous change and reading-start events favor reading-start (i.e., no auto-save).
+
+
+
+E. Payload & Metadata Verification
+
+16. Verify that the auto-save request payload includes the full layout JSON for each monitor.
+
+
+17. Verify that the payload includes correct display-group→viewport mappings (SeriesInstanceUID keys).
+
+
+18. Verify that all renderingParameters (viewType, WW, WL, RenderingMode, ThdRenderingMode, rotate, flip, zoom) are present.
+
+
+19. Verify that all tools flags (sync, crossReference, threeDCursor, stackView) are present and accurate.
+
+
+20. Verify that metadata fields (userID, timestamp, studyUID, sessionID) are included in the payload.
+
+
+
+F. Failure & Recovery
+
+21. Verify that if the Learn-Case service is unavailable, the client logs an error and retries up to N times without UI crash.
+
+
+22. Verify that a failed auto-save does not block the user from starting reading.
+
+
+23. Verify that after service recovery, a subsequent protocol change still triggers auto-save.
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+AC #	Acceptance Criterion	Covered By Test Cases
+
+AC1	Auto-save must occur on any hanging-protocol change before reading starts.	SRO-390 TC 1–3; SSRS-304 TC 1–11
+AC2	No auto-save if no change or if change happens after reading begins.	SRO-390 TC 4–5; SSRS-304 TC 12–13
+AC3	Only one auto-save per burst of rapid changes (debounce).	SRO-390 TC 6; SSRS-304 TC 14
+AC4	Auto-save payload must include complete HP state and metadata.	SRO-390 TC 7; SSRS-304 TC 16–20
+AC5	Failures in auto-save must be logged and must not block reading.	SRO-390 TC 8; SSRS-304 TC 21–23
+
+
+
+---
+
+Let me know if you’d like these in Gherkin or as a spreadsheet export, or if you’re ready to move on!
+
