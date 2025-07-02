@@ -1240,3 +1240,165 @@ AC7: Invalid HP definitions cause safe fallback without crash	SSRS-288 TC 6, 7; 
 
 Let me know if you’d like these in Gherkin, a spreadsheet-style matrix, or as automation skeletons next!
 
+-----------------------------76-----------------------
+Below is the breakdown for SRO-76 (parent) and its SSRS-288 (rendering parameters) with every single minute detail covered as you requested.  Each scenario starts with “Verify…” and they’re clearly separated by SRO vs SSRS.
+
+
+---
+
+🟩 SRO-76
+
+> “The system shall auto-apply a single hanging protocol when the viewer is launched for a given study.”
+
+
+
+🔹 End-to-End Test Cases for SRO-76 (Rendering-focused)
+
+1. Verify that on viewer launch the SRP engine is queried and returns a single HP including its rendering parameters.
+
+
+2. Verify that the returned HP’s rendering parameters (viewType, WW/WL, RenderingMode, etc.) arrive in the client callback.
+
+
+3. Verify that those rendering parameters are applied exactly to each viewport without user intervention.
+
+
+4. Verify that if the HP service fails or times out, the default HP (with its own rendering params) is applied.
+
+
+5. Verify that manual user changes to rendering after launch do not overwrite the auto-applied HP unless re-triggered.
+
+
+
+
+---
+
+🟨 SSRS-288
+
+> “The front-end application shall apply the display/rendering parameters as per the hanging protocol for each viewport.”
+
+
+
+Rendering Parameters List (from your image):
+
+viewType
+
+WindowWidth
+
+WindowLevel
+
+RenderingMode
+
+ThdRenderingMode
+
+Rotate/Flip/Zoom (Supported only for Native viewType)
+
+
+
+---
+
+A. viewType
+
+1. Verify that the viewType defined in the HP (e.g. “Axial–MIP”) is applied to the viewport on load.
+
+
+2. Verify that all supported viewTypes (Native, Axial(Standard, MIP, MinIP, Average, VR), Sagittal, Coronal, 3D) render correctly.
+
+
+3. Verify that an unknown viewType in the HP falls back to “Native” without error.
+
+
+4. Verify that switching the HP mid-session updates each viewport’s viewType immediately.
+
+
+
+
+---
+
+B. WindowWidth & WindowLevel
+
+5. Verify that WindowWidth and WindowLevel values from the HP are set on each viewport’s LUT.
+
+
+6. Verify that invalid WW/WL values (e.g. negative, zero) in the HP revert to the viewer’s default WW/WL.
+
+
+7. Verify that extreme WW/WL values (e.g. very narrow or very wide) are clamped to supported ranges.
+
+
+8. Verify that modifying WW/WL manually after HP application does not persist across HP re-application.
+
+
+
+
+---
+
+C. RenderingMode
+
+9. Verify that the RenderingMode parameter (e.g. “Standard”, “MIP”, “MinIP”, “VR”) is honored per viewport.
+
+
+10. Verify that unsupported RenderingMode values in the HP default to “Standard” without crashing.
+
+
+11. Verify that RenderingMode changes are synchronized if Sync is enabled (per SSRS-290).
+
+
+
+
+---
+
+D. ThdRenderingMode
+
+12. Verify that the ThdRenderingMode (threshold rendering, e.g. bone-only) from the HP is applied if defined.
+
+
+13. Verify that missing threshold settings fall back to the HP’s RenderingMode.
+
+
+14. Verify that out-of-range threshold values (e.g. >255) are clamped or ignored gracefully.
+
+
+
+
+---
+
+E. Rotate / Flip / Zoom (Native Views Only)
+
+15. Verify that Rotate, Flip, and Zoom operations defined in the HP are executed only when viewType=Native.
+
+
+16. Verify that Rotate/Flip commands are ignored if viewType≠Native, with no console errors.
+
+
+17. Verify that Zoom levels from the HP are applied exactly, and invalid zoom factors (e.g. negative) revert to 100%.
+
+
+18. Verify that multiple sequential rotate/flip operations apply in the correct order (Rotate → Flip).
+
+
+
+
+---
+
+✅ Acceptance Criteria Mapping
+
+AC #	Description	Covered by Test Cases
+
+AC1	HP rendering parameters must be applied to each viewport on launch	A1, A2, B5, C9, D15
+AC2	Unsupported or invalid parameter values fall back to safe defaults	A3, B6, C10, D16
+AC3	viewType, WW/WL, RenderingMode, ThdRenderingMode, Rotate/Flip/Zoom behave exactly per HP spec	All above
+AC4	Parameters re-apply correctly if HP is switched mid-session	A4, B8, C11, D18
+AC5	Manual adjustments do not persist across HP re-application	B8, D18
+
+
+
+---
+
+Next Steps?
+
+I can lay these out in a spreadsheet or Gherkin feature file.
+
+Or we can jump to SSRS-307 or the next SRO you have. Let me know!
+
+
