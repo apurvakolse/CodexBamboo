@@ -2101,3 +2101,108 @@ AC5	Failures in auto-save must be logged and must not block reading.	SRO-390 TC 
 
 Let me know if you’d like these in Gherkin or as a spreadsheet export, or if you’re ready to move on!
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------108-----------------
+Below are focused “Verify…” test cases for SSRS-108 (correlate Learn Case with display context), driven by your multi-monitor/single-monitor example. I’ve broken them into Positive, Negative, and Edge scenarios.
+
+
+---
+
+SSRS-108
+
+> “The system shall correlate a user's hanging protocol with the display context at the time the learn operation is executed by associating the Learn Case with these data tags: user, date/time, monitor configuration, loaded comparison studies, study modality, body part, exam procedure, and contrast setting.”
+
+
+
+
+---
+
+🔵 Positive Scenarios
+
+1. Verify that a Learn Case saved on a two-monitor setup (Monitor A: 2×2 grid, custom WW/WL; Monitor B: 1×3 grid, different WW/WL) is auto-applied when reopening the same study in the same two-monitor configuration.
+
+
+2. Verify that the Learn Case’s rendering parameters (viewType, WW/WL, rotate/flip) are correctly restored on each monitor when the configuration matches exactly.
+
+
+3. Verify that when a comparison study was loaded at the time of Learn, it is automatically re-loaded and included in the hanging protocol when the same Learn Case is applied.
+
+
+4. Verify that a Learn Case created without any comparison studies is auto-applied when reopening the same study in the same monitor configuration with no comparisons loaded.
+
+
+
+
+---
+
+🔴 Negative Scenarios
+
+5. Verify that the Learn Case from a two-monitor setup is not auto-applied when the same study is opened in a single-monitor setup (monitor count differs → context mismatch).
+
+
+6. Verify that the Learn Case from a three-monitor configuration is not applied when only two monitors are connected, even if the study and rendering settings match.
+
+
+7. Verify that a Learn Case saved with a specific comparison study is not applied if that comparison is not loaded upon reopen (comparison context mismatch).
+
+
+8. Verify that a Learn Case saved for “CT Chest w/ Contrast” is not applied when opening a “CT Abdomen w/ Contrast” study, despite identical monitor configuration.
+
+
+
+
+---
+
+⚠️ Edge Scenarios
+
+9. Verify that if the primary monitor’s resolution changes (e.g. from 1080p → 4K) but the monitor count remains two, the Learn Case still applies when the client scales the layout appropriately.
+
+
+10. Verify that if monitors are swapped (Monitor A ↔ Monitor B) but both have identical resolution and orientation, the Learn Case still applies, matching by monitor ID or order.
+
+
+11. Verify that a Learn Case created on dual-landscape mode applies in dual-portrait mode only if the client considers orientation flexibly (based on confidence threshold).
+
+
+12. Verify that slight variations in WW/WL (±5 HU) still result in the Learn Case being applied if the confidence algorithm tolerates minor differences.
+
+
+13. Verify that a Learn Case from a “US Abdomen” study is not applied to a “US Pelvis” study, even on the same monitor configuration, due to different body-part tags.
+
+
+
+
+---
+
+📑 Acceptance Criteria Mapping
+
+AC	Covered By Test Cases
+
+AC1: Full match (study + monitors + comparisons + modality…) must apply Learn Case	1–4
+AC2: Any mismatch in critical tags prevents auto-apply	5–8
+AC3: Tolerate minor context variations (resolution/orientation/WW-WL)	9–12
+AC4: Distinct studies with different body‐part or exam procedure not matched	8, 13
+
+
+
+---
+
+These scenarios ensure SSRS-108’s context-matching logic is exhaustively validated across your multi-monitor/single-monitor permutations, study types, and comparison contexts. Let me know if you’d like them expanded into full step-by-step manual cases or converted into Gherkin!
+
+
